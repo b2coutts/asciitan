@@ -2,6 +2,7 @@
 
 (require racket/contract)
 (require "cell.rkt")
+(require "board-template.rkt")
 
 (define-struct/contract board (
   [cells (hash/c cell? (cons/c roll-num? resource?))]
@@ -37,26 +38,55 @@
   (-> integer? string? string?)
   (if (= amt 0) "" (string-append str (replicate (- amt 1) str))))
 
+;; convenient macro for dealing with color changes
+;; TODO: remove this color code reference from the code
+;;   ((black) "30") ((red) "31")
+;;   ((green) "32") ((yellow) "33")
+;;   ((blue) "34") ((magenta) "35")
+;;   ((cyan) "36") ((white) "37")
+;;   ((default) "39"))
+;; TODO: bg/bold/underline?
+(define-syntax-rule (with-color current-color use-color str)
+  (cond
+    [(= current-color use-color) str]
+    [else (set! current-color use-color)
+          ;; TODO: is 30; needed after '['?
+          (format "~a[~am~a" (integer->char #x1b) use-color str)]))
+
+(printf "Red: ~a~a~a\n"
+  (integer->char #x1b)
+  (format "[~a;~a~a~am" 40 35 "" "")
+  "text!")
+
 ;; recurse on the board template to display the board
-(define/contract (fill-template b tp)
-  (-> board? list? string?)
+(define/contract (fill-template b tp col)
+  (-> board? list? color? string?)
   (cond
     [(empty? tp) ""]
     [else (define str (match (first tp)
-      [(? char? c) (~a c)]
+      [(? char? c) (with-color col 37 (~a c))]
       ['nl (~a #\newline)]
       ['sp (~a #\space)]
+      [`(str ,str) (with-color col 37 str)]
       [`(rep ,amt ,code)
         (apply string-append (build-list amt (const (fill-template b tp))))]
-      ['(thief ,cell) (if (equal? (board-thief b) cell) "T" " ")]
-      [`(num ,cell) (~a (board-cell-number b cell) #:width 2)]
-      [`(res ,cell)
-        (substring (symbol->string (board-cell-resource b cell)) 0 1)]
-      [`(road ,char ,edge)
-        (define owner (board-road-owner b edge))
-        (format "~a~a" (if owner (ansi-color-str (user-color owner)) "") char)]
-      ))
-      (string-append str (fill-template b (rest tp)))]))
+      ['(thief ,x ,y)
+        (with-color col 31 (if (equal? (board-thief b) (cons x y)) "T" " "))]
+      [`(num ,x ,y)
+        (with-color col 37 (~a (board-cell-number b (cons x y)) #:width 2))]
+      [`(res ,x ,y)
+        (with-color col 37
+          (substring (symbol->string (board-cell-resource b (cons x y))) 0 1))]
+      [`(edge ,char a b x y)
+        (define edge (cons (cons a b) (cons x y)))
+        (define owner (board-road-owner b (edge-normalize edge)))
+        (with-color col (if owner (user-color owner) 37) (~a char))]
+      [`(vertex ,char a b s t x y)
+        (match (board-vertex-pair b (cons (cons a b) (cons s t) (cons x y)))
+          [#f (with-color col 37 (~a char))]
+          [(cons owner bldg) (with-color col (user-color owner)
+                               (substring (symbol->string bldg) 0 1))])]))
+      (string-append str (fill-template b (rest tp) col))]))
 
 
 ;; -------------------------- CONSTRUCTING FUNCTIONS --------------------------
@@ -76,7 +106,7 @@
 ;; displays a board as a string
 (define/contract (board->string b)
   (-> board? string?)
-  (format "~a" b))
+  (fill-template b board-template -1))
 
 ;; get the roll number of a cell
 (define/contract (board-cell-number b cell)
@@ -91,20 +121,20 @@
 ;; get the owner of the road on an edge (#f if no road is there)
 (define/contract (board-road-owner b edge)
   (-> board? edge? (or/c user? #f))
-  (hash-ref (board-edges b) edge))
+  (hash-ref (board-edges b) (edge-normalize edge)))
 
 ;; get the owner/building pair of a vertex (#f if no building is there)
 (define/contract (board-vertex-pair b vertex)
   (-> board? vertex? (or/c (cons/c user? building?) #f))
-  (hash-ref (board-verts b) vertex))
+  (hash-ref (board-verts b) (vertex-normalize vertex)))
 
 ;; ---------------------------- MUTATING FUNCTIONS ----------------------------
 ;; set the owner of the road on an edge
 (define/contract (set-board-road-owner! b edge usr)
   (-> board? edge? user? void?)
-  (hash-set! (board-edges b) edge usr))
+  (hash-set! (board-edges b) (edge-normalize edge) usr))
 
 ;; set the owner/building pair of a vertex
 (define/contract (set-board-vertex-pair! b vertex usr bldg)
   (-> board? vertex? user? building? void?)
-  (hash-set! (board-verts b) vertex (cons usr bldg)))
+  (hash-set! (board-verts b) (vertex-normalize vertex) (cons usr bldg)))
