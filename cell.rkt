@@ -23,42 +23,11 @@
   adj-cells
 )
 
-;; --------------------------------- CONSTANTS ---------------------------------
-;; list of every cell on the board
-(define board-cell-list '((-2 . -2) (-2 . 0) (-2 . 2)
-                          (-1 . -3) (-1 . -1) (-1 . 1) (-1 . 3)
-                          (0 . -4) (0 . -2) (0 . 0) (0 . 2) (0 . 4)
-                          (1 . -3) (1 . -1) (1 . 1) (1 . 3)
-                          (2 . -2) (2 . 0) (2 . 2)))
-
-;; normalized list of every edge on the board
-(define board-edge-list
-  (map edge-normalize
-    (filter (lambda (edge) (member? (car x) (adj-cells (cdr x))))
-      (apply append
-        (map (lambda (c1) (map (lambda (c2) (cons c1 c2)) board-cell-list))
-             board-cell-list)))))
-
-;; normalized list of every vertex on the board
-(define board-vertex-list
-  (map vertex-normalize
-    (filter (lambda (vertex) (match-define (list a b c) vertex)
-              (and (member? a (adj-cells b))
-                   (member? b (adj-cells c))
-                   (member? c (adj-cells a))))
-      (apply append
-        (map (lambda (c1)
-                (map (lambda (c2)
-                        (map (lambda (c3) (list c1 c2 c3)) board-cell-list))
-                     board-cell-list))
-             board-cell-list)))))
-
-
 ;; --------------------------- PREDICATES/CONTRACTS ---------------------------
 ;; true iff cell is a valid cell coordinate (which may refer to a cell beyond
 ;; the boundary of the board
 (define/contract (cell? cell)
-  (-> any? boolean?)
+  (-> any/c boolean?)
   (match cell
     [(cons (? integer? x) (? integer? y)) (even? (+ x y))]
     [_ #f]))
@@ -75,7 +44,7 @@
 
 ;; true iff r is a valid edge on the board (pair of cells)
 (define/contract (edge? edge)
-  (-> any? boolean?)
+  (-> any/c boolean?)
   (match edge
     [(cons (? cell? a) (? cell? b))
       (and (member? a (adj-cells b)) ;; cells are adjacent (they form an edge)
@@ -84,7 +53,7 @@
 
 ;; true iff v is a valid vertex on the board (trio of cells)
 (define/contract (vertex? vertex)
-  (-> any? boolean?)
+  (-> any/c boolean?)
   (match vertex
     [(list (? cell? a) (? cell? b) (? cell? c))
       (and (member? a (adj-cells b))
@@ -115,8 +84,38 @@
 
 ;; produces a list of the cells adjacent to cell
 (define/contract (adj-cells cell)
-  (-> cell? (list cell? cell? cell? cell? cell? cell?))
+  (-> cell? (list/c cell? cell? cell? cell? cell? cell?))
   (match-define (cons x y) cell)
   (list (cons (- x 1) (- y 1)) (cons (- x 1) (+ y 1))
         (cons x (- y 2)) (cons x (+ y 2))
         (cons (+ x 1) (- y 1)) (cons (+ x 1) (+ y 1))))
+
+;; --------------------------------- CONSTANTS ---------------------------------
+;; list of every cell on the board
+(define board-cell-list '((-2 . -2) (-2 . 0) (-2 . 2)
+                          (-1 . -3) (-1 . -1) (-1 . 1) (-1 . 3)
+                          (0 . -4) (0 . -2) (0 . 0) (0 . 2) (0 . 4)
+                          (1 . -3) (1 . -1) (1 . 1) (1 . 3)
+                          (2 . -2) (2 . 0) (2 . 2)))
+
+;; normalized list of every edge on the board
+(define board-edge-list
+  (map edge-normalize
+    (filter (lambda (edge) (member? (car edge) (adj-cells (cdr edge))))
+      (apply append
+        (map (lambda (c1) (map (lambda (c2) (cons c1 c2)) board-cell-list))
+             board-cell-list)))))
+
+;; normalized list of every vertex on the board
+(define board-vertex-list
+  (map vertex-normalize
+    (filter (lambda (vertex) (match-define (list a b c) vertex)
+              (and (member? a (adj-cells b))
+                   (member? b (adj-cells c))
+                   (member? c (adj-cells a))))
+      (debug (apply append
+        (map (lambda (c1)
+                (map (lambda (c2)
+                        (map (lambda (c3) (list c1 c2 c3)) board-cell-list))
+                     board-cell-list))
+             board-cell-list))))))

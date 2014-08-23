@@ -111,4 +111,4 @@
   (rep 19 sp) (edge #\\ -1 -5 0 -4) (vertex #\_ -1 -5 0 -6 0 -4)
     (rep 3 (edge #\_ 0 -6 0 -4)) (vertex #\_ 0 -6 0 -4 1 -5) (edge #\/ 0 -4 1 -5)
     nl
-  (rep 20 sp) (rep 5 #\?))
+  (rep 20 sp) (rep 5 #\?)))

@@ -30,14 +30,19 @@
   [thief cell?]) #:mutable #:transparent)
 
 ;; ----------------------------- HELPER FUNCTIONS -----------------------------
+;; true iff res is a resource
+(define/contract (resource? res)
+  (-> any/c boolean?)
+  (member? res '(wood grain sheep ore clay desert)))
+
 ;; true iff bu is a building
 (define/contract (building? bu)
-  (-> any? boolean?)
+  (-> any/c boolean?)
   (member? bu '(settlement city)))
 
 ;; true iff n is a valid roll number; 'nil is used for desert
 (define/contract (roll-num? n) 
-  (-> any? boolean?)
+  (-> any/c boolean?)
   (or (member? n (build-list 12 add1)) (equal? n 'nil)))
 
 ;; produce a string which is str repeated amt times
@@ -67,7 +72,7 @@
 
 ;; recurse on the board template to display the board
 (define/contract (fill-template b tp col)
-  (-> board? list? color? string?)
+  (-> board? list? integer? string?)
   (cond
     [(empty? tp) ""]
     [else (define str (match (first tp)
@@ -77,18 +82,18 @@
       [`(str ,str) (with-color col 37 str)]
       [`(rep ,amt ,code)
         (apply string-append (build-list amt (const (fill-template b tp))))]
-      ['(thief ,x ,y)
+      [`(thief ,x ,y)
         (with-color col 31 (if (equal? (board-thief b) (cons x y)) "T" " "))]
       [`(num ,x ,y)
         (with-color col 37 (~a (board-cell-number b (cons x y)) #:width 2))]
       [`(res ,x ,y)
         (with-color col 37
           (substring (symbol->string (board-cell-resource b (cons x y))) 0 1))]
-      [`(edge ,char a b x y)
+      [`(edge ,char ,a ,b ,x ,y)
         (define edge (cons (cons a b) (cons x y)))
         (define owner (board-road-owner b (edge-normalize edge)))
         (with-color col (if owner (user-color owner) 37) (~a char))]
-      [`(vertex ,char a b s t x y)
+      [`(vertex ,char ,a ,b ,s ,t ,x ,y)
         (match (board-vertex-pair b (cons (cons a b) (cons s t) (cons x y)))
           [#f (with-color col 37 (~a char))]
           [(cons owner bldg) (with-color col (user-color owner)
