@@ -100,6 +100,25 @@
                                (substring (symbol->string bldg) 0 1))])]))
       (string-append str (fill-template b (rest tp) col))]))
 
+;; --------------------------------- CONSTANTS ---------------------------------
+;; list of every cell on the board
+(define board-cell-list '((-2 . -2) (-2 . 0) (-2 . 2)
+                          (-1 . -3) (-1 . -1) (-1 . 1) (-1 . 3)
+                          (0 . -4) (0 . -2) (0 . 0) (0 . 2) (0 . 4)
+                          (1 . -3) (1 . -1) (1 . 1) (1 . 3)
+                          (2 . -2) (2 . 0) (2 . 2)))
+
+;; normalized list of every edge on the board
+(define board-edge-list
+  (remove-duplicates (filter-map (lambda (x) (match x
+    [`(edge ,_ ,a ,b ,x ,y) (cons (cons a b) (cons x y))]
+    [_ #f])))))
+
+;; normalized list of every vertex on the board
+(define board-vertex-list
+  (remove-duplicates (filter-map (lambda (x) (match x
+    [`(vertex ,_ ,a ,b ,s ,t ,x ,y) (cons (cons a b) (cons s t) (cons x y))]
+    [_ #f])))))
 
 ;; -------------------------- CONSTRUCTING FUNCTIONS --------------------------
 ;; construct a new random board

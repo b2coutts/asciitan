@@ -8,10 +8,6 @@
 )
 
 (provide
-  board-cell-list
-  board-edge-list
-  board-vertex-list
-
   cell?
   cell-valid?
   edge?
@@ -89,33 +85,3 @@
   (list (cons (- x 1) (- y 1)) (cons (- x 1) (+ y 1))
         (cons x (- y 2)) (cons x (+ y 2))
         (cons (+ x 1) (- y 1)) (cons (+ x 1) (+ y 1))))
-
-;; --------------------------------- CONSTANTS ---------------------------------
-;; list of every cell on the board
-(define board-cell-list '((-2 . -2) (-2 . 0) (-2 . 2)
-                          (-1 . -3) (-1 . -1) (-1 . 1) (-1 . 3)
-                          (0 . -4) (0 . -2) (0 . 0) (0 . 2) (0 . 4)
-                          (1 . -3) (1 . -1) (1 . 1) (1 . 3)
-                          (2 . -2) (2 . 0) (2 . 2)))
-
-;; normalized list of every edge on the board
-(define board-edge-list
-  (map edge-normalize
-    (filter (lambda (edge) (member? (car edge) (adj-cells (cdr edge))))
-      (apply append
-        (map (lambda (c1) (map (lambda (c2) (cons c1 c2)) board-cell-list))
-             board-cell-list)))))
-
-;; normalized list of every vertex on the board
-(define board-vertex-list
-  (map vertex-normalize
-    (filter (lambda (vertex) (match-define (list a b c) vertex)
-              (and (member? a (adj-cells b))
-                   (member? b (adj-cells c))
-                   (member? c (adj-cells a))))
-      (debug (apply append
-        (map (lambda (c1)
-                (map (lambda (c2)
-                        (map (lambda (c3) (list c1 c2 c3)) board-cell-list))
-                     board-cell-list))
-             board-cell-list))))))
