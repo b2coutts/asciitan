@@ -3,6 +3,8 @@
 
 (require
   racket/contract
+
+  "util.rkt"
 )
 
 (provide
@@ -35,7 +37,7 @@
     (filter (lambda (edge) (member? (car x) (adj-cells (cdr x))))
       (apply append
         (map (lambda (c1) (map (lambda (c2) (cons c1 c2)) board-cell-list))
-             board-cell-list))))
+             board-cell-list)))))
 
 ;; normalized list of every vertex on the board
 (define board-vertex-list

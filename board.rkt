@@ -1,8 +1,27 @@
 #lang racket
 
-(require racket/contract)
-(require "cell.rkt")
-(require "board-template.rkt")
+(require
+  racket/contract
+
+  "util.rkt"
+  "cell.rkt"
+  "board-template.rkt"
+)
+
+(provide
+  create-board
+  board?
+
+  board->string
+  board-cell-number
+  board-cell-resource
+  board-road-owner
+  board-vertex-pair
+  board-thief
+
+  set-board-road-owner!
+  set-board-vertex-pair!
+)
 
 (define-struct/contract board (
   [cells (hash/c cell? (cons/c roll-num? resource?))]
@@ -11,18 +30,6 @@
   [thief cell?]) #:mutable #:transparent)
 
 ;; ----------------------------- HELPER FUNCTIONS -----------------------------
-;; compute the cartesian product of a list with itself
-(define/contract (cart-prod lst)
-  (-> list? (listof cons?))
-  (append
-    (map (lambda (x)
-          (map (curry 
-
-;; true iff x is an element of lst
-(define/contract (member? x lst)
-  (-> any? list? boolean?)
-  (if (member x lst) #t #f))
-
 ;; true iff bu is a building
 (define/contract (building? bu)
   (-> any? boolean?)
