@@ -79,6 +79,12 @@
   [`(rep ,_ ,code) (parse-edge code)]
   [_ #f]))
 
+;; convert a building to a single-character string
+(define/contract (bldg->str bldg)
+  (-> building? string?)
+  (match bldg
+    ['settlement "S"]
+    ['city       "C"]))
 
 ;; recurse on the board template to display the board
 ;; returns a string and its ending colour
@@ -92,6 +98,7 @@
       ['nl (~a #\newline)]
       ['sp (~a #\space)]
       [`(str ,str) (with-color col 37 str)]
+      [`(col ,ccol ,char) (with-color col ccol (~a char))]
       [`(rep ,amt ,code)
         (match-define (cons rst newcol) (fill-template b (list code) col))
         (replicate amt rst)]
@@ -103,7 +110,7 @@
       [`(res ,x ,y)
         (define res (board-cell-resource b (cons x y)))
         (define rcolor (match res
-          ['sheep 32] ['clay 35] ['grain 33] ['wood 32] ['ore 36] [_ 37]))
+          ['sheep 92] ['clay 31] ['grain 33] ['wood 32] ['ore 90] [_ 37]))
         (with-color col rcolor (substring (symbol->string res) 0 1))]
       [`(edge ,char ,u ,v ,x ,y)
         (define edge (cons (cons u v) (cons x y)))
@@ -112,20 +119,18 @@
       [`(vertex ,char ,s ,t ,u ,v ,x ,y)
         (match (board-vertex-pair b (list (cons s t) (cons u v) (cons x y)))
           [#f (with-color col 37 (~a char))]
-          [(cons owner bldg) (with-color col (user-color owner)
-                               (substring (symbol->string bldg) 0 1))])]
+          [(cons owner bldg)
+            (with-color col (user-color owner) (bldg->str bldg))])]
       [`(hedge ,c ,d ,s ,t ,u ,v ,x ,y)
         (define owner (board-road-owner b `((,s . ,t) . (,u . ,v))))
         (define ecol (if owner (user-color owner) 37))
         (define s1 (match (board-vertex-pair b `((,c . ,d) (,s . ,t) (,u . ,v)))
           [#f (with-color col ecol "_")]
-          [(cons usr bldg) (with-color col (user-color usr)
-                              (substring (symbol->string bldg) 0 1))]))
+          [(cons usr bldg) (with-color col (user-color usr) (bldg->str bldg))]))
         (define s2 (with-color col ecol "___"))
         (define s3 (match (board-vertex-pair b `((,s . ,t) (,u . ,v) (,x . ,y)))
           [#f (with-color col ecol "_")]
-          [(cons usr bldg) (with-color col (user-color usr)
-                              (substring (symbol->string bldg) 0 1))]))
+          [(cons usr bldg) (with-color col (user-color usr) (bldg->str bldg))]))
         (string-append s1 s2 s3)]))
       (match-define (cons rst newcol) (fill-template b (rest tp) col))
       (cons (string-append str rst) newcol)]))

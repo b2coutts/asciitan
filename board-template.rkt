@@ -31,38 +31,38 @@
     (edge #\/ -2 2 -1 1) sp sp (thief -1 1) sp sp (edge #\\ -1 1 0 2) sp sp sp
     (res 0 2) sp sp sp (edge #\/ 0 2 1 1) sp sp (thief 1 1) sp sp
     (edge #\\ 1 1 2 2) sp sp sp (res 2 2) sp sp sp (edge #\/ 2 2 3 1) (rep 8 sp)
-    (str "| s | sheep        |") nl
+    #\| sp (col 92 #\s) (str " | sheep        |") nl
   (rep 5 sp) (edge #\\ -3 1 -2 2) (hedge -3 1 -2 0 -2 2 -1 1)
     (edge #\/ -2 2 -1 1) sp sp sp (num -1 1) sp sp (edge #\\ -1 1 0 2)
     (hedge -1 1 0 0 0 2 1 1) (edge #\/ 0 2 1 1) sp sp sp (num 1 1) sp sp
     (edge #\\ 1 1 2 2) (hedge 1 1 2 0 2 2 3 1) (edge #\/ 2 2 3 1) (rep 9 sp)
-    (str "| c | clay         |") nl
+    #\| sp (col 31 #\c) (str " | clay         |") nl
   (rep 5 sp) (edge #\/ -3 1 -2 0) sp sp (thief -2 0) sp sp (edge #\\ -2 0 -1 1)
     sp sp sp (res -1 1) sp sp sp (edge #\/ -1 1 0 0) sp sp (thief 0 0) sp sp
     (edge #\\ 0 0 1 1) sp sp sp (res 1 1) sp sp sp (edge #\/ 1 1 2 0) sp sp
-    (thief 2 0) sp sp (edge #\\ 2 0 3 1) (rep 9 sp) (str "| g | grain        |")
-    nl
+    (thief 2 0) sp sp (edge #\\ 2 0 3 1) (rep 9 sp) #\| sp (col 33 #\g)
+    (str " | grain        |") nl
   (rep 3 sp) (vertex #\space -3 -1 -3 1 -2 0) (edge #\/ -3 1 -2 0) sp sp sp
     (num -2 0) sp sp (edge #\\ -2 0 -1 1) (hedge -2 0 -1 -1 -1 1 0 0)
     (edge #\/ -1 1 0 0) sp sp sp (num 0 0) sp sp (edge #\\ 0 0 1 1)
     (hedge 0 0 1 -1 1 1 2 0) (edge #\/ 1 1 2 0) sp sp sp (num 2 0) sp sp
     (edge #\\ 2 0 3 1) (vertex #\space 2 0 3 -1 3 1) (rep 7 sp)
-    (str "| w | wood         |") nl
+    #\| sp (col 32 #\w) (str " | wood         |") nl
   (rep 2 sp) #\o sp (edge #\\ -3 -1 -2 0) sp sp sp (res -2 0) sp sp sp
     (edge #\/ -2 0 -1 -1) sp sp (thief -1 -1) sp sp (edge #\\ -1 -1 0 0) sp sp
     sp (res 0 0) sp sp sp (edge #\/ 0 0 1 -1) sp sp (thief 1 -1) sp sp
     (edge #\\ 1 -1 2 0) sp sp sp (res 2 0) sp sp sp (edge #\/ 2 0 3 -1) sp #\c
-    (rep 6 sp) (str "| o | ore          |") nl
+    (rep 6 sp) #\| sp (col 90 #\o) (str " | ore          |") nl
   (rep 3 sp) #\o sp (edge #\\ -3 -1 -2 0) (hedge -3 -1 -2 -2 -2 0 -1 -1)
     (edge #\/ -2 0 -1 -1) sp sp sp (num -1 -1) sp sp (edge #\\ -1 -1 0 0)
     (hedge -1 -1 0 -2 0 0 1 -1) (edge #\/ 0 0 1 -1) sp sp sp (num 1 -1) sp sp
     (edge #\\ 1 -1 2 0) (hedge 1 -1 2 -2 2 0 3 -1) (edge #\/ 2 0 3 -1) sp #\c
-    (rep 7 sp) (str "| d | desert       |") nl
+    (rep 7 sp) #\| sp (col 37 #\d) (str " | desert       |") nl
   (rep 5 sp) (edge #\/ -3 -1 -2 -2) sp sp (thief -2 -2) sp sp
     (edge #\\ -2 -2 -1 -1) sp sp sp (res -1 -1) sp sp sp (edge #\/ -1 -1 0 -2)
     sp sp (thief 0 -2) sp sp (edge #\\ 0 -2 1 -1) sp sp sp (res 1 -1) sp sp sp
     (edge #\/ 1 -1 2 -2) sp sp (thief 2 -2) sp sp (edge #\\ 2 -2 3 -1)
-    (rep 9 sp) (str "| T | thief        |") nl
+    (rep 9 sp) #\| sp (col 31 #\T) (str " | thief        |") nl
   (rep 3 sp) (vertex #\space -3 -3 -3 -1 -2 -2) (edge #\/ -3 -1 -2 -2) sp sp sp
     (num -2 -2) sp sp (edge #\\ -2 -2 -1 -1) (hedge -2 -2 -1 -3 -1 -1 0 -2)
     (edge #\/ -1 -1 0 -2) sp sp sp (num 0 -2) sp sp (edge #\\ 0 -2 1 -1)
