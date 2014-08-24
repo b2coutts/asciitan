@@ -56,7 +56,7 @@
     (num -2 0) sp sp (edge #\\ -2 0 -1 1) (vertex #\_ -2 0 -1 -1 -1 1)
     (rep 3 (edge #\_ -1 -1 -1 1)) (vertex #\_ -1 -1 -1 1 0 0)
     (edge #\/ -1 1 0 0) sp sp sp (num 0 0) sp sp (edge #\\ 0 0 1 1)
-    (vertex #\_ 0 0 0 2 1 1) (rep 3 (edge #\_ 1 -1 1 1))
+    (vertex #\_ 0 0 1 -1 1 1) (rep 3 (edge #\_ 1 -1 1 1))
     (vertex #\_ 1 -1 1 1 2 0) (edge #\/ 1 1 2 0) sp sp sp (num 2 0) sp sp
     (edge #\\ 2 0 3 1) (vertex #\space 2 0 3 -1 3 1) (rep 7 sp)
     (str "| w | wood         |") nl
