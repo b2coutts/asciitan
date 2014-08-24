@@ -21,5 +21,12 @@
 (set-board-vertex-pair! b (vtx -3 -1 -3 1 -2 0) red 'settlement)
 (set-board-road-owner! b (edg -3 1 -2 0) red)
 
+;; further developments
+(set-board-road-owner! b (edg -1 1 0 2) blue)
+(set-board-road-owner! b (edg -1 1 -1 3) blue)
+(set-board-road-owner! b (edg -1 3 0 2) blue)
+(set-board-vertex-pair! b (vtx -1 1 -1 3 0 2) blue 'city)
+;; (set-board-vertex-pair! b (vtx -1 1 0 0 0 2) blue 'city)
+
 ;; display board
 (display (board->string b))
