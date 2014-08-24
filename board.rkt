@@ -113,7 +113,20 @@
         (match (board-vertex-pair b (list (cons s t) (cons u v) (cons x y)))
           [#f (with-color col 37 (~a char))]
           [(cons owner bldg) (with-color col (user-color owner)
-                               (substring (symbol->string bldg) 0 1))])]))
+                               (substring (symbol->string bldg) 0 1))])]
+      [`(hedge ,c ,d ,s ,t ,u ,v ,x ,y)
+        (define owner (board-road-owner b `((,s . ,t) . (,u . ,v))))
+        (define ecol (if owner (user-color owner) 37))
+        (define s1 (match (board-vertex-pair b `((,c . ,d) (,s . ,t) (,u . ,v)))
+          [#f (with-color col ecol "_")]
+          [(cons usr bldg) (with-color col (user-color usr)
+                              (substring (symbol->string bldg) 0 1))]))
+        (define s2 (with-color col ecol "___"))
+        (define s3 (match (board-vertex-pair b `((,s . ,t) (,u . ,v) (,x . ,y)))
+          [#f (with-color col ecol "_")]
+          [(cons usr bldg) (with-color col (user-color usr)
+                              (substring (symbol->string bldg) 0 1))]))
+        (string-append s1 s2 s3)]))
       (match-define (cons rst newcol) (fill-template b (rest tp) col))
       (cons (string-append str rst) newcol)]))
 
@@ -143,7 +156,7 @@
   ((0 . -2) 1 . -3) ((1 . -3) 2 . -2) ((2 . -2) 3 . -3) ((-2 . -4) -2 . -2)
   ((0 . -4) 0 . -2) ((2 . -4) 2 . -2) ((-2 . -4) -1 . -3) ((-1 . -3) 0 . -4)
   ((0 . -4) 1 . -3) ((1 . -3) 2 . -4) ((-1 . -5) -1 . -3) ((1 . -5) 1 . -3)
-  ((-1 . -5) 0 . -4) ((0 . -4) 1 . -5) ((0 . -6) 0 . -4)))
+  ((-1 . -5) 0 . -4) ((0 . -4) 1 . -5) ((0 . -6) 0 . -4) ((0 . 4) 0 . 6)))
 
 ;; normalized list of every vertex on the board
 (define board-vertex-list '(
@@ -172,7 +185,8 @@
   ((1 . -3) (2 . -4) (2 . -2)) ((2 . -4) (2 . -2) (3 . -3))
   ((-2 . -4) (-1 . -5) (-1 . -3)) ((-1 . -5) (-1 . -3) (0 . -4))
   ((0 . -4) (1 . -5) (1 . -3)) ((1 . -5) (1 . -3) (2 . -4))
-  ((-1 . -5) (0 . -6) (0 . -4)) ((0 . -6) (0 . -4) (1 . -5))))
+  ((-1 . -5) (0 . -6) (0 . -4)) ((0 . -6) (0 . -4) (1 . -5))
+  ((0 . -2) (1 . -3) (1 . -1)) ((-1 . -3) (0 . -4) (0 . -2))))
 
 ;; -------------------------- CONSTRUCTING FUNCTIONS --------------------------
 ;; construct a new random board
