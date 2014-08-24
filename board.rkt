@@ -23,13 +23,7 @@
   set-board-vertex-pair!
 )
 
-(define-struct/contract board (
-  [cells (hash/c cell? (cons/c roll-num? resource?))]
-  [edges (hash/c edge? (or/c user? #f))]
-  [verts (hash/c vertex? (or/c (cons/c user? building?) #f))]
-  [thief cell?]) #:mutable #:transparent)
-
-;; ----------------------------- HELPER FUNCTIONS -----------------------------
+;; various predicates (TODO: move these to a separate module?)
 ;; true iff res is a resource
 (define/contract (resource? res)
   (-> any/c boolean?)
@@ -45,6 +39,14 @@
   (-> any/c boolean?)
   (or (member? n (build-list 12 add1)) (equal? n 'nil)))
 
+
+(define-struct/contract board (
+  [cells (hash/c cell? (cons/c roll-num? resource?))]
+  [edges (hash/c edge? (or/c user? #f))]
+  [verts (hash/c vertex? (or/c (cons/c user? building?) #f))]
+  [thief cell?]) #:mutable #:transparent)
+
+;; ----------------------------- HELPER FUNCTIONS -----------------------------
 ;; produce a string which is str repeated amt times
 (define/contract (replicate amt str)
   (-> integer? string? string?)
@@ -65,40 +67,53 @@
           ;; TODO: is 30; needed after '['?
           (format "~a[~am~a" (integer->char #x1b) use-color str)]))
 
-(printf "Red: ~a~a~a\n"
-  (integer->char #x1b)
-  (format "[~a;~a~a~am" 40 35 "" "")
-  "text!")
+;; parses a vertex out of a term in the board template
+(define (parse-vertex x) (match x
+  [`(vertex ,_ ,a ,b ,s ,t ,x ,y) (list (cons a b) (cons s t) (cons x y))]
+  [`(rep ,_ ,code) (parse-vertex code)]
+  [_ #f]))
+
+;; parses an edge out of a term in the board template
+(define (parse-edge x) (match x
+  [`(edge ,_ ,a ,b ,x ,y) (cons (cons a b) (cons x y))]
+  [`(rep ,_ ,code) (parse-edge code)]
+  [_ #f]))
+
 
 ;; recurse on the board template to display the board
+;; returns a string and its ending colour
 (define/contract (fill-template b tp col)
-  (-> board? list? integer? string?)
+  (-> board? list? integer? (cons/c string? integer?))
+  ; (printf "MYDEB: ~a, ~a, ~a\n" b "" col) TODO: remove
   (cond
-    [(empty? tp) ""]
+    [(empty? tp) (cons "" col)]
     [else (define str (match (first tp)
       [(? char? c) (with-color col 37 (~a c))]
       ['nl (~a #\newline)]
       ['sp (~a #\space)]
       [`(str ,str) (with-color col 37 str)]
       [`(rep ,amt ,code)
-        (apply string-append (build-list amt (const (fill-template b tp))))]
+        (match-define (cons rst newcol) (fill-template b (list code) col))
+        (replicate amt rst)]
       [`(thief ,x ,y)
         (with-color col 31 (if (equal? (board-thief b) (cons x y)) "T" " "))]
       [`(num ,x ,y)
-        (with-color col 37 (~a (board-cell-number b (cons x y)) #:width 2))]
+        (define num (board-cell-number b (cons x y)))
+        (with-color col 37 (~a (match num ['nil ""] [x x]) #:width 2))]
       [`(res ,x ,y)
         (with-color col 37
           (substring (symbol->string (board-cell-resource b (cons x y))) 0 1))]
-      [`(edge ,char ,a ,b ,x ,y)
-        (define edge (cons (cons a b) (cons x y)))
+      [`(edge ,char ,u ,v ,x ,y)
+        (define edge (cons (cons u v) (cons x y)))
         (define owner (board-road-owner b (edge-normalize edge)))
         (with-color col (if owner (user-color owner) 37) (~a char))]
-      [`(vertex ,char ,a ,b ,s ,t ,x ,y)
-        (match (board-vertex-pair b (cons (cons a b) (cons s t) (cons x y)))
+      [`(vertex ,char ,s ,t ,u ,v ,x ,y)
+        (match (board-vertex-pair b (list (cons s t) (cons u v) (cons x y)))
           [#f (with-color col 37 (~a char))]
           [(cons owner bldg) (with-color col (user-color owner)
                                (substring (symbol->string bldg) 0 1))])]))
-      (string-append str (fill-template b (rest tp) col))]))
+      (match-define (cons rst newcol) (fill-template b (rest tp) col))
+      (cons (string-append str rst) newcol)]))
 
 ;; --------------------------------- CONSTANTS ---------------------------------
 ;; list of every cell on the board
@@ -110,15 +125,11 @@
 
 ;; normalized list of every edge on the board
 (define board-edge-list
-  (remove-duplicates (filter-map (lambda (x) (match x
-    [`(edge ,_ ,a ,b ,x ,y) (cons (cons a b) (cons x y))]
-    [_ #f])))))
+  (remove-duplicates (filter-map parse-edge board-template)))
 
 ;; normalized list of every vertex on the board
 (define board-vertex-list
-  (remove-duplicates (filter-map (lambda (x) (match x
-    [`(vertex ,_ ,a ,b ,s ,t ,x ,y) (cons (cons a b) (cons s t) (cons x y))]
-    [_ #f])))))
+  (remove-duplicates (filter-map parse-vertex board-template)))
 
 ;; -------------------------- CONSTRUCTING FUNCTIONS --------------------------
 ;; construct a new random board
@@ -137,7 +148,7 @@
 ;; displays a board as a string
 (define/contract (board->string b)
   (-> board? string?)
-  (fill-template b board-template -1))
+  (car (fill-template b board-template -1)))
 
 ;; get the roll number of a cell
 (define/contract (board-cell-number b cell)
