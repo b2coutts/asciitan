@@ -135,14 +135,15 @@
 ;; construct a new random board
 (define/contract (create-board)
   (-> board?)
-  (define roll-list (shuffle '(nil 2 3 3 4 4 5 5 6 6 8 8 9 9 10 10 11 11 12)))
+  (define roll-list (shuffle '(2 3 3 4 4 5 5 6 6 8 8 9 9 10 10 11 11 12)))
   (define res-list (shuffle '(ore ore ore wood wood wood wood clay clay clay
-                              grain grain grain grain sheep sheep sheep sheep
-                              desert)))
-  (board (make-hash (map cons board-cell-list (map cons roll-list res-list)))
+                              grain grain grain grain sheep sheep sheep sheep)))
+  (define cell-list (shuffle board-cell-list))
+  (board (make-hash (map cons cell-list
+                      (cons (cons 'nil 'desert) (map cons roll-list res-list))))
          (make-hash (map (curryr cons #f) board-edge-list))
          (make-hash (map (curryr cons #f) board-vertex-list))
-         (cdr (assoc 'nil (map cons roll-list board-cell-list)))))
+         (first cell-list)))
 
 ;; ---------------------------- QUERYING FUNCTIONS ----------------------------
 ;; displays a board as a string
