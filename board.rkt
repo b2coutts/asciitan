@@ -23,6 +23,10 @@
   board-vertex-pair
   board-thief
 
+  board-cell-list
+  board-edge-list
+  board-vertex-list
+
   set-board-road-owner!
   set-board-vertex-pair!
 )
