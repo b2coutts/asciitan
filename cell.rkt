@@ -85,3 +85,12 @@
   (list (cons (- x 1) (- y 1)) (cons (- x 1) (+ y 1))
         (cons x (- y 2)) (cons x (+ y 2))
         (cons (+ x 1) (- y 1)) (cons (+ x 1) (+ y 1))))
+
+;; TODO: edges adjacent to a cell?
+
+;; produces a list of the vertices adjacent to a cell
+(define/contract (adj-vertices cell)
+  (-> cell? (list/c cell? cell? cell? cell? cell? cell?))
+  (match-define (list c1 c2 c3 c4 c5 c6) (adj-cells cell))
+  (list (list cell c1 c2) (list cell c2 c4) (list cell c4 c6)
+        (list cell c6 c5) (list cell c5 c3) (list cell c3 c1)))

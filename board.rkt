@@ -10,7 +10,11 @@
 
 (provide
   create-board
+
   board?
+  resource?
+  building?
+  roll-num?
 
   board->string
   board-cell-number
@@ -23,7 +27,6 @@
   set-board-vertex-pair!
 )
 
-;; various predicates (TODO: move these to a separate module?)
 ;; true iff res is a resource
 (define/contract (resource? res)
   (-> any/c boolean?)
@@ -53,12 +56,6 @@
   (if (= amt 0) "" (string-append str (replicate (- amt 1) str))))
 
 ;; convenient macro for dealing with color changes
-;; TODO: remove this color code reference from the code
-;;   ((black) "30") ((red) "31")
-;;   ((green) "32") ((yellow) "33")
-;;   ((blue) "34") ((magenta) "35")
-;;   ((cyan) "36") ((white) "37")
-;;   ((default) "39"))
 ;; TODO: bg/bold/underline?
 (define-syntax-rule (with-color current-color use-color str)
   (cond
