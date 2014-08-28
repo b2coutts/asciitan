@@ -1,11 +1,13 @@
 #lang racket
 
-(require "engine.rkt")
+(require "data.rkt" "engine.rkt")
 
 ;; TODO: unhardcode this maybe or something
 (define MAX-USERS 4)
 
 ;; begins interacting with a given user on the given input/output ports
+;; TODO: code for ending
+;; TODO: prompting
 (define/contract (run-listener usr init-port)
   (-> output-port? void?)
   (define tcpl (tcp-listen 0))
@@ -23,7 +25,7 @@
     (unless (void? response)
       (call-with-semaphore (third (user-io usr))
         (write response out))
-    (loop)))
+    (loop))))
 
 ;; dispatch listeners, generate the initial state
 ;; TODO: close initial tcp connection after establishing listener?

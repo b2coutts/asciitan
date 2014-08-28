@@ -12,22 +12,6 @@
   handle-action!
 )
 
-;; ---------------------------------- STRUCTS ---------------------------------
-(define-struct/contract user (
-  [name string?]                      ;; name of the user
-  [cards (listof dev-card?)]          ;; list of the user's held dev cards
-  [res (hash/c resource? integer?)]   ;; list of the user's held resources
-  [color color?]                      ;; the user's color
-  [io (list/c input-port? output-port? semaphore?)] ;; i/o handles/mutex
-)
-
-(define-struct/contract state (
-  [users (listof user?)]      ;; list of the users in the game
-  [turnu user?]               ;; user whose turn it is
-  [board board?]              ;; the game board
-  [cards (listof dev-card?)]  ;; the stack of dev cards
-)
-
 ;; ------------------------- CONSTANTS/LISTS/CONTRACTS -------------------------
 ;; ordered list of all dev cards
 (define dev-cards
@@ -45,15 +29,6 @@
   [settlement . #hash([ore . 0] [grain . 1] [clay . 1] [wood . 1] [sheep . 1])]
   [dev-card . #hash([ore . 1] [grain . 1] [clay . 0] [wood . 0] [sheep . 1])]
   [road . #hash([ore . 0] [grain . 0] [clay . 1] [wood . 1] [sheep . 0])]))
-
-(define (dev-card? dc) (member? dc dev-cards))
-(define (item? item) (member? item items))
-
-;; represents an amount of resources, i.e., a price
-(define stock? (hash/c resource? integer?))
-
-;; represents a response sent back to the user
-(define response? (or/c string? void?))
 
 ;; -------------------------- SMALL HELPER FUNCTIONS --------------------------
 ;; broadcast a server message to everyone
@@ -119,7 +94,6 @@
   (if (>= (user-veeps leader) 10) leader #f))
 
 ;; --------------------------- BIG HELPER FUNCTIONS ---------------------------
-
 ;; given a roll number, modify the game state to add resources
 (define/contract (apply-roll! st roll)
   (-> state? roll-num? void?)

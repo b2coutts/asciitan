@@ -3,6 +3,7 @@
 (require
   racket/contract
 
+  "data.rkt"
   "util.rkt"
   "cell.rkt"
   "board-template.rkt"
@@ -30,28 +31,6 @@
   set-board-road-owner!
   set-board-vertex-pair!
 )
-
-;; true iff res is a resource
-(define/contract (resource? res)
-  (-> any/c boolean?)
-  (member? res '(wood grain sheep ore clay desert)))
-
-;; true iff bu is a building
-(define/contract (building? bu)
-  (-> any/c boolean?)
-  (member? bu '(settlement city)))
-
-;; true iff n is a valid roll number; 'nil is used for desert
-(define/contract (roll-num? n) 
-  (-> any/c boolean?)
-  (or (member? n (build-list 12 add1)) (equal? n 'nil)))
-
-
-(define-struct/contract board (
-  [cells (hash/c cell? (cons/c roll-num? resource?))]
-  [edges (hash/c edge? (or/c user? #f))]
-  [verts (hash/c vertex? (or/c (cons/c user? building?) #f))]
-  [thief cell?]) #:mutable #:transparent)
 
 ;; ----------------------------- HELPER FUNCTIONS -----------------------------
 ;; produce a string which is str repeated amt times
@@ -216,7 +195,7 @@
 
 ;; get the roll number of a cell
 (define/contract (board-cell-number b cell)
-  (-> board? cell-valid? roll-num?)
+  (-> board? cell-valid? (or/c roll-num? 'nil))
   (car (hash-ref (board-cells b) cell)))
 
 ;; get the resource of a cell

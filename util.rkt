@@ -3,17 +3,12 @@
 
 (require racket/contract)
 
-(provide member? user? user user-color debug)
+(provide member?)
 
 ;; true iff x is an element of lst
 (define/contract (member? x lst)
   (-> any/c list? boolean?)
   (if (member x lst) #t #f))
-
-;; debugging function; prints and produces its argument
-(define (debug x)
-  (printf "DEBUG: ~s\n" x)
-  x)
 
 ;; prompt the user for input
 ;;  
