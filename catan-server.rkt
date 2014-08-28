@@ -1,29 +1,65 @@
 #lang racket
 
-(define mutex (make-semaphore 1))
-
-(define response? (or/c string? void?))
+;; TODO: unhardcode this maybe or something
+(define MAX_USERS 4)
 
 (define (item? x) (member? x '(city settlement dev-card road)))
+(define response? (or/c string? void?))
 
 ;; begins interacting with a given user on the given input/output ports
 ;; TODO: add a channel for when the game is won
-(define/contract (run-listener usr in out)
-  (-> input-port? output-port? void?)
+(define/contract (run-listener usr init-port)
+  (-> output-port? void?)
+  (define tcpl (tcp-listen 0))
+  (match-define (values _ port _ _) (tcp-addresses tcpl #t))
+  (write port init-port)
+  (printf "Awaiting listener connection from client ~a on port ~a...\n"
+    (user-name usr) port)
+  (define-values (in out) (tcp-accept tcpl))
+  (printf "Client ~a listener connection established.\n" (user-name usr))
   (let loop []
     (sync (read-line-evt in 'any))
-    (define response (call-with-semaphore mutex (thunk (handle-action! usr evt))))
+    (define response
+      (call-with-semaphore mutex (thunk (handle-action! usr evt))))
     (unless (void? response) (write response out))
     (loop)))
 
-;; TODO: replace these hardcoded connection details with something else
-;; TODO: actually hardcode these connection details
-(define st (create-state usr1 usr2))
 
-;; run listener threads
-(thread (thunk (run-listener usr1 in1 out1)))
-(thread (thunk (run-listener usr2 in2 out2)))
+;; dispatch listeners, generate the initial state
+(define/contract (init-server [init-port 0])
+  (->* () (integer-in 0 65535) state?)
+  (define colors '(magenta blue yellow cyan))
+  (define listener (tcp-listen port))
+  (match-define (values _ port _ _) (tcp-addresses listener #t))
+  (printf "Listening for connections on port ~a...\n" port)
+  (define (loop usrs)
+    (define continue (cond
+      [(empty? usrs) #t]
+      [(= (length usrs) MAX_USERS) #f]
+      [else (equal? (prompt "[c]ontinue awaiting users, or [s]tart the game?\n"
+                            (or/c 'c 's)) 'c)]))
+    (cond
+      [continue
+        (printf "Awaiting connection...\n")
+        (define-values in out (tcp-accept listener))
+        (define usr (user (read in) '() '() (list-ref colors (length usrs))
+                          (list in out (make-semaphore 1))))
+        (printf "Connection established; name is '~a'\n" (user-name usr))
+        (thread (thunk (run-listener usr out)))
+        ;; TODO: block until listener connection is established
+        ]
+      [else usrs]))
+  (init-state (loop '())))
 
+;; broadcast a server message to everyone
+(define/contract (broadcast fstr . args)
+  (->* (string?) () #:rest (listof any/c))
+  (map (lambda (usr)
+        (match-define (list _ out mutex) (user-io usr))
+        (call-with-semaphore mutex (thunk
+          (apply (curry fprintf out fstr) args))))
+       (state-users st)))
+  
 (define/contract (handle-action! usr act)
   (-> user? action? response?)
   (match act
@@ -119,3 +155,12 @@
 (define/contract (bank! usr res-list target)
   (-> user? (listof resource?) resource? response?)
   (void))
+
+
+;; ----------------------------- MAIN RUNNING CODE -----------------------------
+(define mutex (make-semaphore 1)) ;; mutex for game state
+
+;; initialize connections to the clients, and the game state
+(define st (init-state))
+
+;; TODO: allow the clients to choose their initial settlements/roads
