@@ -34,7 +34,7 @@
   (define colors '(magenta blue yellow cyan))
   (define listener (tcp-listen init-port))
   (match-define-values (_ port _ _) (tcp-addresses listener #t))
-  (printf "Listening for connections on port ~a...\n" port)
+  (printf "Listening for connections on port ~a.\n" port)
   (define (loop usrs)
     (define continue (cond
       [(empty? usrs) #t]

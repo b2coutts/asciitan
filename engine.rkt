@@ -164,7 +164,8 @@
     [`(buy ,item ,args) (buy-item! st usr item)]
     [`(use ,card-num) (use-card! st usr card-num)] ;; TODO: use card name instead?
     [`(bank ,res-list ,target) (bank! st usr res-list target)]
-    [`(end) (change-turn!)]))
+    [`(end) (change-turn!)]
+    [`(ping ,str) (format "pong ~a" str)]))
 
 ;; creates a new state, given a non-empty list of users
 (define/contract (init-state usrs)
