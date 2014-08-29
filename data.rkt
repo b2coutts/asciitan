@@ -37,18 +37,18 @@
   [res (hash/c resource? integer?)]   ;; list of the user's held resources
   [color integer?]                    ;; the user's color
   [io (list/c input-port? output-port? semaphore?)] ;; i/o handles/mutex
-) #:mutable)
+) #:mutable #:transparent)
 
 (define-struct/contract board (
   [cells (hash/c cell? (cons/c (or/c roll-num? 'nil) resource?))]
   [edges (hash/c edge? (or/c user? #f))]
   [verts (hash/c vertex? (or/c (cons/c user? building?) #f))]
   [thief cell?]
-) #:mutable)
+) #:mutable #:transparent)
 
 (define-struct/contract state (
   [users (listof user?)]      ;; list of the users in the game
   [turnu user?]               ;; user whose turn it is
   [board board?]              ;; the game board
   [cards (listof dev-card?)]  ;; the stack of dev cards
-) #:mutable)
+) #:mutable #:transparent)

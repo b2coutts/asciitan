@@ -159,7 +159,7 @@
 ;; ------------------------------- API FUNCTIONS -------------------------------
 ;; TODO: description
 (define/contract (handle-action! st usr act)
-  (-> state? user? (cons/c command? list?) response?)
+  (-> (or/c state? #f) user? (cons/c command? list?) response?)
   (logf 'debug "handle-action!: usr=~a, act=~s\n" usr act)
   (match act
     [`(buy ,item ,args) (buy-item! st usr item)]

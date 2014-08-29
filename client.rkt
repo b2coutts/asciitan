@@ -24,6 +24,6 @@
 
 (send '(ping "asdf") nout) (flush-output nout)
 (define response (read nin))
-(when (not (equal? response "b2coutts"))
+(when (not (equal? response "pong asdf"))
   (error (format "response was ~s" response)))
 (printf "Successfully established connection\n")
