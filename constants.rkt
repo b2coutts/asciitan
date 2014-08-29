@@ -1,7 +1,7 @@
 ;; various useful constant values
 #lang racket
 
-(provide item-prices dev-cards items
+(provide item-prices dev-cards items commands
          board-cell-list board-edge-list board-vertex-list)
 
 ;; hash mapping buyable things to prices
@@ -20,6 +20,10 @@
 
 ;; list of all buyable items
 (define items '(city settlement dev-card road))
+
+;; list of valid commands to the server
+;; TODO: add info, help, respond
+(define commands '(buy use bank end ping))
 
 
 ;; list of every cell on the board

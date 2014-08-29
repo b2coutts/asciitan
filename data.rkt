@@ -13,6 +13,7 @@
   roll-num?
   dev-card?
   item?
+  command?
   stock?
   response?
 )
@@ -21,7 +22,8 @@
 (define building? (in '(settlement city)))
 (define roll-num? (in (build-list 11 (curry + 2))))
 (define dev-card? (in dev-cards))
-(define item? (in items))
+(define item?     (in items))
+(define command?  (in commands))
 
 ;; represents an amount of resources, i.e., a price
 (define stock? (hash/c resource? integer?))
