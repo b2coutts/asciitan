@@ -1,6 +1,6 @@
 #lang racket
 
-(require "data.rkt" "engine.rkt" "util.rkt")
+(require "board.rkt" "data.rkt" "engine.rkt" "util.rkt")
 
 ;; TODO: unhardcode this maybe or something
 (define MAX-USERS 4)
@@ -48,6 +48,7 @@
   (logf 'info "Listening for connections on port ~a.\n" port)
   (define (loop usrs)
     (define continue (cond
+      [#t #t] ;; TODO: remove this line
       [(empty? usrs) #t]
       [(= (length usrs) MAX-USERS) #f]
       [else (equal? (prompt "[c]ontinue awaiting users, or [s]tart the game?"
@@ -69,8 +70,25 @@
   (init-state (loop '())))
 
 ;; ----------------------------- MAIN RUNNING CODE -----------------------------
-
 ;; initialize connections to the clients, and the game state
-(set! st (init-server))
+(set! st (init-server 38209)) ;; TODO: un-hardcode port
 
 ;; TODO: allow the clients to choose their initial settlements/roads
+(call-with-semaphore mutex (thunk
+  (define (vtx a b c d e f) (list (cons a b) (cons c d) (cons e f)))
+  (define (edg a b c d) (cons (cons a b) (cons c d)))
+
+  (define usr (first (state-users st)))
+  (define (f vtx) (set-board-vertex-pair! (state-board st) vtx usr 'settlement))
+  (define (g edge) (set-board-road-owner! (state-board st) edge usr))
+
+  (f (vtx -1 -1 0 -2 0 0))
+  (g (edg 0 -2 0 0))
+  (f (vtx 1 -1 1 1 2 0))
+  (g (edg 2 -2 2 0))))
+
+(define (loop)
+  (define evt (sync (thread-receive-evt)))
+  (printf "EVT:   ~a\n" evt)
+  (loop))
+(loop)

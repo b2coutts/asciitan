@@ -22,7 +22,7 @@
 (define items '(city settlement dev-card road))
 
 ;; list of valid commands to the server
-;; TODO: add info, help, respond
+;; TODO: add info, help, respond; remove show
 (define commands '(buy use bank end ping))
 
 

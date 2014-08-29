@@ -160,7 +160,7 @@
 ;; TODO: description
 (define/contract (handle-action! st usr act)
   (-> (or/c state? #f) user? (cons/c command? list?) response?)
-  (logf 'debug "handle-action!: usr=~a, act=~s\n" usr act)
+  (logf 'debug "handle-action!: usr=~a, act=~s\n" (user-name usr) act)
   (match act
     [`(buy ,item ,args) (buy-item! st usr item)]
     [`(use ,card-num) (use-card! st usr card-num)] ;; TODO: use card name instead?

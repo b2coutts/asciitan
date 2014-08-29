@@ -6,8 +6,8 @@
 
 ;; TODO: this is very rough; do it properly!
 (printf "Which port is the server running on?\n")
-(define port (read))
-(read-line) ;; take trailing newline
+(define port 38209);; (define port (read)) TODO: unhardcode
+;; (read-line) ;; take trailing newline
 (define-values (in out) (tcp-connect "localhost" port))
 (file-stream-buffer-mode out 'line)
 
