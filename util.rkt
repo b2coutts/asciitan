@@ -3,7 +3,7 @@
 
 (require racket/contract)
 
-(provide member? prompt in notin)
+(provide member? prompt in notin logf)
 
 ;; true iff x is an element of lst
 (define/contract (member? x lst)
