@@ -43,7 +43,7 @@
       [(empty? usrs) #t]
       [(= (length usrs) MAX-USERS) #f]
       [else (equal? (prompt "[c]ontinue awaiting users, or [s]tart the game?"
-                            (or/c 'c 's)) 'c)]))
+                            (notin '(c s))) 'c)]))
     (cond
       [continue
         (printf "Awaiting connection...\n")

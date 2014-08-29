@@ -17,11 +17,11 @@
   response?
 )
 
-(define (resource? res) (member? res '(wood grain sheep ore clay desert)))
-(define (building? bu) (member? bu '(settlement city)))
-(define (roll-num? n) (member? n (build-list 11 (curry + 2))))
-(define (dev-card? dc) (member? dc dev-cards))
-(define (item? item) (member? item items))
+(define resource? (in '(wood grain sheep ore clay desert)))
+(define building? (in '(settlement city)))
+(define roll-num? (in (build-list 11 (curry + 2))))
+(define dev-card? (in dev-cards))
+(define item? (in items))
 
 ;; represents an amount of resources, i.e., a price
 (define stock? (hash/c resource? integer?))

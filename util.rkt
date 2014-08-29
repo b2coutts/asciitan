@@ -3,12 +3,22 @@
 
 (require racket/contract)
 
-(provide member? prompt)
+(provide member? prompt in notin)
 
 ;; true iff x is an element of lst
 (define/contract (member? x lst)
   (-> any/c list? boolean?)
   (if (member x lst) #t #f))
+
+;; given a list, produces a function which checks if its argument is in the list
+(define/contract (in lst)
+  (-> list? (-> any/c boolean?))
+  (curryr member? lst))
+
+;; negation of the above
+(define/contract (notin lst)
+  (-> list? (-> any/c boolean?))
+  (compose not (in lst)))
 
 ;; prompt the user for input
 (define/contract (prompt msg validate [in (current-input-port)]
