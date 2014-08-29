@@ -15,11 +15,11 @@
   (define tcpl (tcp-listen 0))
   (match-define-values (_ port _ _) (tcp-addresses tcpl #t))
   (send port init-port)
-  (printf "Awaiting listener connection from client ~a on port ~a...\n"
+  (logf 'info "Awaiting listener connection from client ~a on port ~a...\n"
     (user-name usr) port)
   (define-values (in out) (tcp-accept tcpl))
   (set-user-io! usr (list in out (third (user-io usr))))
-  (printf "Client ~a listener connection established.\n" (user-name usr))
+  (logf 'info "Client ~a listener connection established.\n" (user-name usr))
   (thread-send parent 'done)
   (let loop []
     (define req (sync (read-line-evt in 'any)))
@@ -37,7 +37,7 @@
   (define colors '(93 94 95 96))
   (define listener (tcp-listen init-port))
   (match-define-values (_ port _ _) (tcp-addresses listener #t))
-  (printf "Listening for connections on port ~a.\n" port)
+  (logf 'info "Listening for connections on port ~a.\n" port)
   (define (loop usrs)
     (define continue (cond
       [(empty? usrs) #t]
@@ -46,13 +46,13 @@
                             (notin '(c s))) 'c)]))
     (cond
       [continue
-        (printf "Awaiting connection...\n")
+        (logf 'info "Awaiting connection...\n")
         (define-values (in out) (tcp-accept listener))
         (file-stream-buffer-mode out 'line) ;; TODO: is line-buffering okay?
-        (printf "TODO: connection made, waiting for name...\n")
+        (logf 'debug "connection made, waiting for name...\n")
         (define usr (user (read in) '() '#hash() (list-ref colors (length usrs))
                           (list in out (make-semaphore 1))))
-        (printf "Connection established; name is '~a'\n" (user-name usr))
+        (logf 'info "Connection established; name is '~a'\n" (user-name usr))
         (define parent (current-thread))
         (thread (thunk (run-listener parent usr out)))
         (sync (thread-receive-evt)) ;; TODO: do this better

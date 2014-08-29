@@ -33,3 +33,14 @@
     [err (when (string? err) (fprintf "~a\n" err))
          (prompt msg validate in out)]
     [else input]))
+
+;; logf mutex
+(define logf-mutex (make-semaphore 1))
+
+;; logging function
+;; TODO: timestamp
+(define/contract (logf type fstr . args)
+  (->* ((or/c 'debug 'info) string?) () #:rest (listof any/c) void?)
+  (call-with-semaphore logf-mutex (thunk
+    (define tstr (match type ['debug "DEBUG: "] ['info "INFO:  "]))
+    (apply (curry printf (string-append tstr fstr)) args))))
