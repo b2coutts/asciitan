@@ -7,9 +7,9 @@
 
 (define yel (user "yel" '() '#hash() 93
   (list (current-input-port) (current-output-port) (make-semaphore 0))))
-(define blu (user "blu" '() '#hash() 93
+(define blu (user "blu" '() '#hash() 94
   (list (current-input-port) (current-output-port) (make-semaphore 0))))
-(define mag (user "mag" '() '#hash() 94
+(define mag (user "mag" '() '#hash() 95
   (list (current-input-port) (current-output-port) (make-semaphore 0))))
 (define cya (user "cya" '() '#hash() 96
   (list (current-input-port) (current-output-port) (make-semaphore 0))))
