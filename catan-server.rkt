@@ -22,7 +22,9 @@
   (logf 'info "Client ~a listener connection established.\n" (user-name usr))
   (thread-send parent 'done)
   (let loop []
+    (logf 'debug "listener for ~a waiting for request...\n" (user-name usr))
     (define req (sync (read-line-evt in 'any)))
+    (logf 'debug "listener for ~a received request ~s\n" (user-name usr) req)
     (define response
       (call-with-semaphore mutex (thunk (handle-action! st usr req))))
     (unless (void? response)
@@ -61,7 +63,7 @@
   (init-state (loop '())))
 
 ;; ----------------------------- MAIN RUNNING CODE -----------------------------
-(define mutex (make-semaphore 0)) ;; mutex for game state
+(define mutex (make-semaphore 1)) ;; mutex for game state TODO: change back to 1
 
 ;; initialize connections to the clients, and the game state
 (define st (init-server))

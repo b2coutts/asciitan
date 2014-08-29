@@ -1,7 +1,7 @@
 ;; contains code for running the game
 #lang racket
 
-(require "board.rkt" "cell.rkt" "data.rkt" "constants.rkt")
+(require "board.rkt" "cell.rkt" "util.rkt" "data.rkt" "constants.rkt")
 
 (provide
   user
@@ -160,6 +160,7 @@
 ;; TODO: description
 (define/contract (handle-action! st usr act)
   (-> state? user? list? response?)
+  (logf 'debug "handle-action!: usr=~a, act=~s\n" usr act)
   (match act
     [`(buy ,item ,args) (buy-item! st usr item)]
     [`(use ,card-num) (use-card! st usr card-num)] ;; TODO: use card name instead?
