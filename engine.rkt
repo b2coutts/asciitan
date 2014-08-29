@@ -1,8 +1,7 @@
 ;; contains code for running the game
 #lang racket
 
-(require "board.rkt")
-(require "cell.rkt")
+(require "board.rkt" "cell.rkt" "data.rkt" "constants.rkt")
 
 (provide
   user
@@ -12,33 +11,16 @@
   handle-action!
 )
 
-;; ------------------------- CONSTANTS/LISTS/CONTRACTS -------------------------
-;; ordered list of all dev cards
-(define dev-cards
-  (append (build-list 14 (const 'knight))
-          (build-list 5  (const 'veep)) ;; TODO: separate these?
-          (build-list 2  (const 'year-of-plenty))
-          (build-list 2  (const 'road-building))))
-
-;; list of all buyable items
-(define items '(city settlement dev-card road))
-
-;; hash mapping buyable things to prices
-(define item-prices `#hash(
-  [city . #hash([ore . 3] [grain . 2] [clay . 0] [wood . 0] [sheep . 0])]
-  [settlement . #hash([ore . 0] [grain . 1] [clay . 1] [wood . 1] [sheep . 1])]
-  [dev-card . #hash([ore . 1] [grain . 1] [clay . 0] [wood . 0] [sheep . 1])]
-  [road . #hash([ore . 0] [grain . 0] [clay . 1] [wood . 1] [sheep . 0])]))
-
 ;; -------------------------- SMALL HELPER FUNCTIONS --------------------------
 ;; broadcast a server message to everyone
 (define/contract (broadcast st fstr . args)
-  (->* state? (string?) () #:rest (listof any/c))
+  (->* (state? string?) #:rest (listof any/c) void?)
   (map (lambda (usr)
         (match-define (list _ out mutex) (user-io usr))
         (call-with-semaphore mutex (thunk
           (apply (curry fprintf out fstr) args))))
-       (state-users st)))
+       (state-users st))
+  (void))
 
 ;; give a specified (possibly negative) amount of a resource to a user
 (define/contract (give-res! usr res [amt 1])
@@ -52,7 +34,7 @@
 
 ;; convert a list of resources into a stock
 (define/contract (list->stock lst)
-  (-> (listof res?) stock?)
+  (-> (listof resource?) stock?)
   (define stock '#hash())
   (map (lambda (res) (hash-set! stock res (+ (hash-ref stock res 0) 1))) lst)
   stock)
@@ -65,7 +47,7 @@
 ;; determines whether or not the user can afford a given price (hash)
 (define/contract (can-afford? usr price)
   (-> user? item? boolean?)
-  (apply and
+  (foldr (lambda (x y) (and x y)) #t
     (hash-map (lambda (res amt) (>= amt (hash-ref price res))) (user-res usr))))
 
 ;; removes a dev card from the top of the stack
@@ -177,7 +159,7 @@
 ;; ------------------------------- API FUNCTIONS -------------------------------
 ;; TODO: description
 (define/contract (handle-action! st usr act)
-  (-> state? user? action? response?)
+  (-> state? user? list? response?)
   (match act
     [`(buy ,item ,args) (buy-item! st usr item)]
     [`(use ,card-num) (use-card! st usr card-num)] ;; TODO: use card name instead?

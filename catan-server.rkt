@@ -1,6 +1,6 @@
 #lang racket
 
-(require "data.rkt" "engine.rkt")
+(require "data.rkt" "engine.rkt" "util.rkt")
 
 ;; TODO: unhardcode this maybe or something
 (define MAX-USERS 4)
@@ -9,9 +9,9 @@
 ;; TODO: code for ending
 ;; TODO: prompting
 (define/contract (run-listener usr init-port)
-  (-> output-port? void?)
+  (-> user? output-port? void?)
   (define tcpl (tcp-listen 0))
-  (match-define (values _ port _ _) (tcp-addresses tcpl #t))
+  (match-define-values (_ port _ _) (tcp-addresses tcpl #t))
   (write port init-port)
   (printf "Awaiting listener connection from client ~a on port ~a...\n"
     (user-name usr) port)
@@ -19,9 +19,9 @@
   (set-user-io! usr (list in out (third (user-io usr))))
   (printf "Client ~a listener connection established.\n" (user-name usr))
   (let loop []
-    (sync (read-line-evt in 'any))
+    (define req (sync (read-line-evt in 'any)))
     (define response
-      (call-with-semaphore mutex (thunk (handle-action! usr evt))))
+      (call-with-semaphore mutex (thunk (handle-action! st usr req))))
     (unless (void? response)
       (call-with-semaphore (third (user-io usr))
         (write response out))
@@ -30,10 +30,10 @@
 ;; dispatch listeners, generate the initial state
 ;; TODO: close initial tcp connection after establishing listener?
 (define/contract (init-server [init-port 0])
-  (->* () (integer-in 0 65535) state?)
+  (->* () (integer?) state?)
   (define colors '(magenta blue yellow cyan))
-  (define listener (tcp-listen port))
-  (match-define (values _ port _ _) (tcp-addresses listener #t))
+  (define listener (tcp-listen init-port))
+  (match-define-values (_ port _ _) (tcp-addresses listener #t))
   (printf "Listening for connections on port ~a...\n" port)
   (define (loop usrs)
     (define continue (cond
@@ -44,8 +44,8 @@
     (cond
       [continue
         (printf "Awaiting connection...\n")
-        (define-values in out (tcp-accept listener))
-        (define usr (user (read in) '() '() (list-ref colors (length usrs))
+        (define-values (in out) (tcp-accept listener))
+        (define usr (user (read in) '() '#hash() (list-ref colors (length usrs))
                           (list in out (make-semaphore 1))))
         (printf "Connection established; name is '~a'\n" (user-name usr))
         (thread (thunk (run-listener usr out)))
@@ -58,7 +58,7 @@
 (define mutex (make-semaphore 0)) ;; mutex for game state
 
 ;; initialize connections to the clients, and the game state
-(define st (init-state))
+(define st (init-server))
 
 ;; TODO: allow the clients to choose their initial settlements/roads
 

@@ -3,7 +3,7 @@
 
 (require racket/contract)
 
-(provide member?)
+(provide member? prompt)
 
 ;; true iff x is an element of lst
 (define/contract (member? x lst)
@@ -11,7 +11,6 @@
   (if (member x lst) #t #f))
 
 ;; prompt the user for input
-;;  
 (define/contract (prompt msg validate [in (current-input-port)]
                                       [out (current-output-port)])
   (->* (string? (-> any/c (or/c string? #f)))

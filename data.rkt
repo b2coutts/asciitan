@@ -1,10 +1,12 @@
 ;; various data type declarations
 #lang racket
 
+(require "util.rkt" "cell.rkt" "constants.rkt")
+
 (provide
-  board
-  user
-  state
+  (struct-out board)
+  (struct-out user)
+  (struct-out state)
 
   resource?
   building?
@@ -13,27 +15,6 @@
   item?
   stock?
   response?
-)
-
-(define-struct/contract board (
-  [cells (hash/c cell? (cons/c roll-num? resource?))]
-  [edges (hash/c edge? (or/c user? #f))]
-  [verts (hash/c vertex? (or/c (cons/c user? building?) #f))]
-  [thief cell?]) #:mutable #:transparent)
-
-(define-struct/contract user
-  [name string?]                      ;; name of the user
-  [cards (listof dev-card?)]          ;; list of the user's held dev cards
-  [res (hash/c resource? integer?)]   ;; list of the user's held resources
-  [color color?]                      ;; the user's color
-  [io (list/c input-port? output-port? semaphore?)] ;; i/o handles/mutex
-)
-
-(define-struct/contract state
-  [users (listof user?)]      ;; list of the users in the game
-  [turnu user?]               ;; user whose turn it is
-  [board board?]              ;; the game board
-  [cards (listof dev-card?)]  ;; the stack of dev cards
 )
 
 (define (resource? res) (member? res '(wood grain sheep ore clay desert)))
@@ -47,3 +28,25 @@
 
 ;; represents a response sent back to the user
 (define response? (or/c string? void?))
+
+(define-struct/contract user (
+  [name string?]                      ;; name of the user
+  [cards (listof dev-card?)]          ;; list of the user's held dev cards
+  [res (hash/c resource? integer?)]   ;; list of the user's held resources
+  [color integer?]                    ;; the user's color
+  [io (list/c input-port? output-port? semaphore?)] ;; i/o handles/mutex
+) #:mutable)
+
+(define-struct/contract board (
+  [cells (hash/c cell? (cons/c (or/c roll-num? 'nil) resource?))]
+  [edges (hash/c edge? (or/c user? #f))]
+  [verts (hash/c vertex? (or/c (cons/c user? building?) #f))]
+  [thief cell?]
+) #:mutable)
+
+(define-struct/contract state (
+  [users (listof user?)]      ;; list of the users in the game
+  [turnu user?]               ;; user whose turn it is
+  [board board?]              ;; the game board
+  [cards (listof dev-card?)]  ;; the stack of dev cards
+) #:mutable)
