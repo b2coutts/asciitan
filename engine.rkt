@@ -51,8 +51,8 @@
       (map (lambda (res) (format "~a[~am~a ~a" col-esc (resource->color res)
                                                (hash-ref stock res) res))
            (filter (lambda (res) (not (= (hash-ref stock res 0) 0))) resources))
-     (format "~a[37m, " col-esc))))
-    (format "~a[37m" col-esc)))
+     (format "~a, " (style->string '(40 37 #f #f))))))
+    (style->string '(40 37 #f #f))))
 
 ;; generates a properly-weighted random roll (from 2-12)
 (define/contract (random-roll)

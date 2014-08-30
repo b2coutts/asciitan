@@ -3,7 +3,7 @@
 
 (require racket/contract)
 
-(provide member? prompt in notin resource->color logf)
+(provide member? prompt in notin resource->color style->string logf)
 
 ;; true iff x is an element of lst
 (define/contract (member? x lst)
@@ -43,6 +43,13 @@
              ['wood 32]
              ['ore 90]
              ['desert 37]))
+
+;; given a style, produce the ANSI escape string for inducing that style
+(define/contract (style->string sty)
+  (-> (list/c integer? integer? boolean? boolean?) string?)
+  (match-define (list bg fg bold underline) sty)
+  (format "~a[~a;~a~a~am" (integer->char #x1b) bg fg (if bold ";1" "")
+                          (if underline ";4" ""))) 
 
 ;; logging function
 ;; TODO: timestamp

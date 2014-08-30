@@ -32,14 +32,12 @@
   (-> integer? string? string?)
   (if (= amt 0) "" (string-append str (replicate (- amt 1) str))))
 
-;; convenient macro for dealing with color changes
-;; TODO: bg/bold/underline?
-(define-syntax-rule (with-color current-color use-color str)
+;; convenient macro for dealing with style changes
+(define-syntax-rule (with-style current-style use-style str)
   (cond
-    [(= current-color use-color) str]
-    [else (set! current-color use-color)
-          ;; TODO: is 30; needed after '['?
-          (format "~a[~am~a" col-esc use-color str)]))
+    [(equal? current-style use-style) str]
+    [else (set! current-style use-style)
+          (format "~a~a" (style->string use-style) str)]))
 
 ;; parses a vertex out of a term in the board template
 (define (parse-vertex x) (match x
@@ -62,50 +60,53 @@
 
 ;; recurse on the board template to display the board
 ;; returns a string and its ending colour
-(define/contract (fill-template b tp col)
-  (-> board? list? integer? (cons/c string? integer?))
-  ; (printf "MYDEB: ~a, ~a, ~a\n" b "" col) TODO: remove
+(define/contract (fill-template b tp sty)
+  (-> board? list? style? (cons/c string? style?))
   (cond
-    [(empty? tp) (cons "" col)]
+    [(empty? tp) (cons "" sty)]
     [else (define str (match (first tp)
-      [(? char? c) (with-color col 37 (~a c))]
+      [(? char? c) (with-style sty '(40 37 #f #f) (~a c))]
       ['nl (~a #\newline)]
       ['sp (~a #\space)]
-      [`(str ,str) (with-color col 37 str)]
-      [`(col ,ccol ,char) (with-color col ccol (~a char))]
+      [`(str ,str) (with-style sty '(40 37 #f #f) str)]
+      [`(sty ,nsty ,char) (with-style sty nsty (~a char))]
       [`(rep ,amt ,code)
-        (match-define (cons rst newcol) (fill-template b (list code) col))
+        (match-define (cons rst newcol) (fill-template b (list code) sty))
         (replicate amt rst)]
       [`(thief ,x ,y)
-        (with-color col 31 (if (equal? (board-thief b) (cons x y)) "T" " "))]
+        (with-style sty '(40 31 #f #f)
+          (if (equal? (board-thief b) (cons x y)) "T" " "))]
       [`(num ,x ,y)
         (define num (board-cell-number b (cons x y)))
-        (with-color col 37 (~a (match num ['nil ""] [x x]) #:width 2))]
+        (with-style sty '(40 37 #f #f)
+          (~a (match num ['nil ""] [x x]) #:width 2))]
       [`(res ,x ,y)
         (define res (board-cell-resource b (cons x y)))
-        (define rcolor (resource->color res))
-        (with-color col rcolor (substring (symbol->string res) 0 1))]
+        (define rsty `(40 ,(resource->color res) #f #f))
+        (with-style sty rsty (substring (symbol->string res) 0 1))]
       [`(edge ,char ,u ,v ,x ,y)
         (define edge (cons (cons u v) (cons x y)))
-        (define owner (board-road-owner b (edge-normalize edge)))
-        (with-color col (if owner (user-color owner) 37) (~a char))]
+        (define ownr (board-road-owner b (edge-normalize edge)))
+        (with-style sty `(40 ,(if ownr (user-color ownr) 37) #f #f) (~a char))]
       [`(vertex ,char ,s ,t ,u ,v ,x ,y)
         (match (board-vertex-pair b (list (cons s t) (cons u v) (cons x y)))
-          [#f (with-color col 37 (~a char))]
+          [#f (with-style sty '(40 37 #f #f) (~a char))]
           [(cons owner bldg)
-            (with-color col (user-color owner) (bldg->str bldg))])]
+            (with-style sty `(40 ,(user-color owner) #f #f) (bldg->str bldg))])]
       [`(hedge ,c ,d ,s ,t ,u ,v ,x ,y)
         (define owner (board-road-owner b `((,s . ,t) . (,u . ,v))))
-        (define ecol (if owner (user-color owner) 37))
+        (define esty `(40 ,(if owner (user-color owner) 37) #f #f))
         (define s1 (match (board-vertex-pair b `((,c . ,d) (,s . ,t) (,u . ,v)))
-          [#f (with-color col ecol "_")]
-          [(cons usr bldg) (with-color col (user-color usr) (bldg->str bldg))]))
-        (define s2 (with-color col ecol "___"))
+          [#f (with-style sty esty "_")]
+          [(cons usr bldg) (with-style sty `(40 ,(user-color usr) #f #f)
+                                       (bldg->str bldg))]))
+        (define s2 (with-style sty esty "___"))
         (define s3 (match (board-vertex-pair b `((,s . ,t) (,u . ,v) (,x . ,y)))
-          [#f (with-color col ecol "_")]
-          [(cons usr bldg) (with-color col (user-color usr) (bldg->str bldg))]))
+          [#f (with-style sty esty "_")]
+          [(cons usr bldg) (with-style sty `(40 ,(user-color usr) #f #f)
+                                       (bldg->str bldg))]))
         (string-append s1 s2 s3)]))
-      (match-define (cons rst newcol) (fill-template b (rest tp) col))
+      (match-define (cons rst newcol) (fill-template b (rest tp) sty))
       (cons (string-append str rst) newcol)]))
 
 ;; -------------------------- CONSTRUCTING FUNCTIONS --------------------------
@@ -126,7 +127,7 @@
 ;; displays a board as a string
 (define/contract (board->string b)
   (-> board? string?)
-  (car (fill-template b board-template -1)))
+  (car (fill-template b board-template '(-1 -1 #f #f))))
 
 ;; get the roll number of a cell
 (define/contract (board-cell-number b cell)

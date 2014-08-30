@@ -14,6 +14,7 @@
   dev-card?
   item?
   command?
+  style?
   stock?
   response?
 )
@@ -24,6 +25,9 @@
 (define dev-card? (in dev-cards))
 (define item?     (in items))
 (define command?  (in commands))
+
+;; represents the current ANSI terminal style; (bg fg bold underline)
+(define style? (list/c integer? integer? boolean? boolean?))
 
 ;; represents an amount of resources, i.e., a price
 (define stock? (hash/c resource? integer?))
