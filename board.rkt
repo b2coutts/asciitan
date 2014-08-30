@@ -136,7 +136,7 @@
 
 ;; get the resource of a cell
 (define/contract (board-cell-resource b cell)
-  (-> board? cell-valid? resource?)
+  (-> board? cell-valid? (or/c resource? 'desert))
   (cdr (hash-ref (board-cells b) cell)))
 
 ;; get the owner of the road on an edge (#f if no road is there)

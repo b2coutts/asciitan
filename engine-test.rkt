@@ -1,7 +1,8 @@
 ;; module for testing the game engine (without tcp, etc)
 #lang racket
 
-(require "data.rkt" "constants.rkt" "board.rkt" "cell.rkt" "engine.rkt")
+(require "data.rkt" "constants.rkt" "board.rkt" "cell.rkt" "engine.rkt"
+         "util.rkt")
 
 ;; TODO: move some of these into existing modules?
 ;; ----------------------------- UTILITY FUNCTIONS -----------------------------
@@ -29,7 +30,9 @@
 
 ;; --------------------------------- MAIN CODE ---------------------------------
 ;; create initial state
-(define io (list (current-input-port) (current-output-port) (make-semaphore 0)))
+;; seed random number generator to make the test deterministic
+(random-seed 1234)
+(define io (list (current-input-port) (current-output-port) (make-semaphore 1)))
 (define no-res (make-hash (map (lambda (res) (cons res 0))
                                '(wood grain sheep ore clay))))
 (define ron (user "ron" '() no-res 95 io))
@@ -65,4 +68,12 @@
 
 ;; main code of interacting with the server
 (printf "~a[37m" (integer->char #x1b)) ;; set color to white
+(display (state->string st))
+
+(act! ron '(end))
+(act! dan '(end))
+(act! ron '(end))
+(act! dan '(end))
+(act! ron '(end))
+
 (display (state->string st))

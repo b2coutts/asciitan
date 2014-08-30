@@ -18,7 +18,7 @@
   response?
 )
 
-(define resource? (in '(wood grain sheep ore clay desert)))
+(define resource? (in resources))
 (define building? (in '(settlement city)))
 (define roll-num? (in (build-list 11 (curry + 2))))
 (define dev-card? (in dev-cards))
@@ -40,7 +40,7 @@
 ) #:mutable #:transparent)
 
 (define-struct/contract board (
-  [cells (hash/c cell? (cons/c (or/c roll-num? 'nil) resource?))]
+  [cells (hash/c cell? (cons/c (or/c roll-num? 'nil) (or/c resource? 'desert)))]
   [edges (hash/c edge? (or/c user? #f))]
   [verts (hash/c vertex? (or/c (cons/c user? building?) #f))]
   [thief cell?]

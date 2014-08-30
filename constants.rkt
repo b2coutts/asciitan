@@ -1,8 +1,11 @@
 ;; various useful constant values
 #lang racket
 
-(provide item-prices dev-cards items commands
+(provide item-prices dev-cards items commands resources
          board-cell-list board-edge-list board-vertex-list)
+
+;; list of resources
+(define resources '(wood grain sheep ore clay))
 
 ;; hash mapping buyable things to prices
 (define item-prices `#hash(

@@ -4,6 +4,7 @@
 (require "board.rkt" "cell.rkt" "util.rkt" "data.rkt" "constants.rkt")
 
 (provide
+  ;; TODO: remove these 2?
   user
   state
 
@@ -25,17 +26,19 @@
 ;; give a specified (possibly negative) amount of a resource to a user
 (define/contract (give-res! usr res [amt 1])
   (->* (user? resource?) (integer?) void?)
-  (hash-set! (user-res usr) res (+ (hash-ref (user-res usr) res) amt)))
+  (hash-set! (user-res usr) res (+ (hash-ref (user-res usr) res) amt))
+  (void))
 
 ;; give a stock of resources to a user
 (define/contract (give-stock! usr stock)
   (-> user? stock? void?)
-  (hash-map (lambda (res amt) (give-res! usr res amt)) stock))
+  (hash-map stock (lambda (res amt) (give-res! usr res amt)))
+  (void))
 
 ;; convert a list of resources into a stock
 (define/contract (list->stock lst)
   (-> (listof resource?) stock?)
-  (define stock '#hash())
+  (define stock (make-hash))
   (map (lambda (res) (hash-set! stock res (+ (hash-ref stock res 0) 1))) lst)
   stock)
 
@@ -48,7 +51,7 @@
 (define/contract (can-afford? usr price)
   (-> user? item? boolean?)
   (foldr (lambda (x y) (and x y)) #t
-    (hash-map (lambda (res amt) (>= amt (hash-ref price res))) (user-res usr))))
+    (hash-map (user-res usr) (lambda (res amt) (>= amt (hash-ref price res))))))
 
 ;; removes a dev card from the top of the stack
 (define/contract (pop-dev-card! st)
@@ -61,19 +64,19 @@
 ;; produce the number of veeps a given user has
 (define/contract (user-veeps st usr)
   (-> state? user? integer?)
-  (foldr + 0 (map (lambda (vtx) (match (board-vertex-pair vtx)
-                                  [(cons (quote usr) 'settlement) 1]
-                                  [(cons (quote usr) 'city) 2]
+  (foldr + 0 (map (lambda (vtx) (match (board-vertex-pair (state-board st) vtx)
+                                  [(cons (== usr) 'settlement) 1]
+                                  [(cons (== usr) 'city) 2]
                                   [_ 0]))
                   board-vertex-list)))
 
 ;; if the game is over, returns the winner; otherwise, returns #f
 (define/contract (game-over? st)
   (-> state? (or/c user? #f))
-  (define veeps (map user-veeps (state-users st)))
-  (define leader (sort (map (lambda (usr) (user-veeps st usr)) (state-users st))
-                       (lambda (x y) (< (user-veeps x) (user-veeps y)))))
-  (if (>= (user-veeps leader) 10) leader #f))
+  (define veeps (map (curry user-veeps st) (state-users st)))
+  (define leader (first (sort (state-users st)
+                       (lambda (x y) (< (user-veeps st x) (user-veeps st y))))))
+  (if (>= (user-veeps st leader) 10) leader #f))
 
 ;; --------------------------- BIG HELPER FUNCTIONS ---------------------------
 ;; given a roll number, modify the game state to add resources
@@ -82,15 +85,16 @@
   (define b (state-board st))
   (map (lambda (usr)
     (define stock-gain (list->stock
-      (hash-map (lambda (cell num-res)
-        (define res (cdr num-res))
-        (apply append
-          (filter (lambda (vtx) (match (board-vertex-pair b vtx)
-                    [(cons (quote usr) 'city) (list res res)]
-                    [(cons (quote usr) 'settlement) (list res)]
-                    [#f '()]))
-                  (adj-vertices cell))))
-       (board-edges b))))
+      (apply append
+        (hash-map (board-cells b) (lambda (cell num-res)
+          (define res (cdr num-res))
+          (if (equal? res 'desert) '()
+            (apply append
+              (filter-map (lambda (vtx) (match (board-vertex-pair b vtx)
+                            [(cons (== usr) 'city) (list res res)]
+                            [(cons (== usr) 'settlement) (list res)]
+                            [_ #f]))
+                      (adj-vertices cell)))))))))
     ;; TODO: better broadcast message
     (broadcast st "~a gets ~a." (user-name usr) stock-gain)
     (give-stock! usr stock-gain))
@@ -128,7 +132,7 @@
       "That space is already occupied!"]
     [(and (equal? item 'dev-card) (empty? (state-cards st)))
       "There are no more dev cards left to draw!"]
-    [else (hash-map (lambda (res amt)
+    [else (hash-map (hash-ref item-prices item) (lambda (res amt)
                       (hash-set! (user-res usr) res
                                  (- (hash-ref (user-res usr) res) amt))))
           (match item
@@ -165,7 +169,7 @@
     [`(buy ,item ,args) (buy-item! st usr item)]
     [`(use ,card-num) (use-card! st usr card-num)] ;; TODO: use card name instead?
     [`(bank ,res-list ,target) (bank! st usr res-list target)]
-    [`(end) (change-turn!)]
+    [`(end) (change-turn! st)]
     [`(show board) (board->string (state-board st))]
     [`(ping ,str) (format "pong ~a" str)]))
 
