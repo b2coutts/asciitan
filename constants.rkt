@@ -2,6 +2,7 @@
 #lang racket
 
 (provide item-prices dev-cards items commands resources
+         col-esc
          board-cell-list board-edge-list board-vertex-list)
 
 ;; list of resources
@@ -27,6 +28,9 @@
 ;; list of valid commands to the server
 ;; TODO: add info, help, respond; remove show
 (define commands '(buy use bank end ping show))
+
+;; ANSI terminal color code escape character
+(define col-esc (integer->char #x1b))
 
 
 ;; list of every cell on the board

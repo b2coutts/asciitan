@@ -14,12 +14,13 @@
 
 ;; -------------------------- SMALL HELPER FUNCTIONS --------------------------
 ;; broadcast a server message to everyone
+;; TODO: remove SERVER
 (define/contract (broadcast st fstr . args)
   (->* (state? string?) #:rest (listof any/c) void?)
   (map (lambda (usr)
         (match-define (list _ out mutex) (user-io usr))
         (call-with-semaphore mutex (thunk
-          (apply (curry fprintf out fstr) args))))
+          (apply (curry fprintf out (string-append "SERVER: " fstr "\n")) args))))
        (state-users st))
   (void))
 
@@ -79,6 +80,11 @@
   (if (>= (user-veeps st leader) 10) leader #f))
 
 ;; --------------------------- BIG HELPER FUNCTIONS ---------------------------
+;; given a user, produce a string of its user name with correct color-coding
+(define/contract (uname usr)
+  (-> user? string?)
+  (format "~a[~am~a~a[37m" col-esc (user-color usr) (user-name usr) col-esc))
+
 ;; given a roll number, modify the game state to add resources
 (define/contract (apply-roll! st roll)
   (-> state? roll-num? void?)
@@ -88,7 +94,7 @@
       (apply append
         (hash-map (board-cells b) (lambda (cell num-res)
           (define res (cdr num-res))
-          (if (equal? res 'desert) '()
+          (if (or (equal? res 'desert) (not (= (car num-res) roll)))  '()
             (apply append
               (filter-map (lambda (vtx) (match (board-vertex-pair b vtx)
                             [(cons (== usr) 'city) (list res res)]
@@ -96,7 +102,7 @@
                             [_ #f]))
                       (adj-vertices cell)))))))))
     ;; TODO: better broadcast message
-    (broadcast st "~a gets ~a." (user-name usr) stock-gain)
+    (broadcast st "~a gets ~a." (uname usr) stock-gain)
     (give-stock! usr stock-gain))
    (state-users st))
   (void))
@@ -108,15 +114,15 @@
   (define winner (game-over? st))
   (cond
     ;; TODO: send some sort of endgame signal
-    [winner (broadcast st "~a won the game!" (user-name winner))]
+    [winner (broadcast st "~a won the game!" (uname winner))]
     [else
       (define usrs (state-users st))
       (define oldind (- (length usrs) (length (member (state-turnu st) usrs))))
       (define newind (modulo (add1 oldind) (length usrs)))
       (set-state-turnu! st (list-ref usrs newind))
-      (broadcast st "It's ~a's turn." (user-name (state-turnu st)))
+      (broadcast st "It's ~a's turn." (uname (state-turnu st)))
       (define roll (random-roll))
-      (broadcast st "~a rolls a ~a." (user-name (state-turnu st)) roll)
+      (broadcast st "~a rolls a ~a." (uname (state-turnu st)) roll)
       (apply-roll! st roll)]))
 
 ;; -------------------------- MAJOR HELPER FUNCTIONS --------------------------
@@ -138,16 +144,16 @@
           (match item
             [(or 'city 'settlement)
               (set-board-vertex-pair! b args usr item)
-              (broadcast st "~a has built a ~a at ~a." (user-name usr) item
+              (broadcast st "~a has built a ~a at ~a." (uname usr) item
                 (vertex->string args))]
             ['road
               (set-board-road-owner! b args usr)
-              (broadcast st "~a has built a road at ~a." (user-name usr)
+              (broadcast st "~a has built a road at ~a." (uname usr)
                 (edge->string args))]
             ['dev-card
               (define draw (pop-dev-card!))
               (set-user-cards! usr (cons draw (user-cards usr)))
-              (broadcast st "~a has built a dev card." (user-name usr))
+              (broadcast st "~a has built a dev card." (uname usr))
               (format "You draw a ~a." draw)])]))
 
 ;; TODO

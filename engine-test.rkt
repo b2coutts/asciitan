@@ -10,8 +10,7 @@
 (define/contract (user->string usr)
   (-> user? string?)
   (string-append
-    (format "~a[~am~a~a[37m: " (integer->char #x1b) (user-color usr) (user-name usr)
-      (integer->char #x1b))
+    (format "~a[~am~a~a[37m: " col-esc (user-color usr) (user-name usr) col-esc)
     (format "dev-cards: ~a; " (user-cards usr))
     (apply (curry format "wood: ~a, grain: ~a, sheep: ~a, ore: ~a, clay: ~a\n")
            (map (lambda (res) (hash-ref (user-res usr) res))
@@ -32,11 +31,16 @@
 ;; create initial state
 ;; seed random number generator to make the test deterministic
 (random-seed 1234)
-(define io (list (current-input-port) (current-output-port) (make-semaphore 1)))
-(define no-res (make-hash (map (lambda (res) (cons res 0))
+
+;; function to avoid eq?
+(define (no-res) (make-hash (map (lambda (res) (cons res 0))
                                '(wood grain sheep ore clay))))
-(define ron (user "ron" '() no-res 95 io))
-(define dan (user "dan" '() no-res 96 io))
+
+(define ron (user "ron" '() (no-res) 95 
+  (list (current-input-port) (current-output-port) (make-semaphore 1))))
+(define dan (user "dan" '() (no-res) 96
+  (list (current-input-port) (open-output-file "/dev/null" #:exists 'truncate)
+        (make-semaphore 1))))
 (define st (state (list ron dan) ron (create-board) (shuffle dev-cards)))
 (define b (state-board st))
 
@@ -67,13 +71,15 @@
   (printf "~a: ~a\n" (user-name usr) resp))
 
 ;; main code of interacting with the server
-(printf "~a[37m" (integer->char #x1b)) ;; set color to white
+(printf "~a[37m" col-esc) ;; set color to white
 (display (state->string st))
 
-(act! ron '(end))
-(act! dan '(end))
-(act! ron '(end))
-(act! dan '(end))
-(act! ron '(end))
+;; (act! ron '(end))
+
+(handle-action! st ron '(end))
+(handle-action! st dan '(end))
+(handle-action! st ron '(end))
+(handle-action! st dan '(end))
+(handle-action! st ron '(end))
 
 (display (state->string st))

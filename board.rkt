@@ -39,7 +39,7 @@
     [(= current-color use-color) str]
     [else (set! current-color use-color)
           ;; TODO: is 30; needed after '['?
-          (format "~a[~am~a" (integer->char #x1b) use-color str)]))
+          (format "~a[~am~a" col-esc use-color str)]))
 
 ;; parses a vertex out of a term in the board template
 (define (parse-vertex x) (match x

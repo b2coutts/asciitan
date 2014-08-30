@@ -39,8 +39,10 @@
 
 ;; logging function
 ;; TODO: timestamp
+(define printable '(info))
 (define/contract (logf type fstr . args)
   (->* ((or/c 'debug 'info) string?) () #:rest (listof any/c) void?)
-  (call-with-semaphore logf-mutex (thunk
-    (define tstr (match type ['debug "DEBUG: "] ['info "INFO:  "]))
-    (apply (curry printf (string-append tstr fstr)) args))))
+  (when (member? type printable)
+    (call-with-semaphore logf-mutex (thunk
+      (define tstr (match type ['debug "DEBUG: "] ['info "INFO:  "]))
+      (apply (curry printf (string-append tstr fstr)) args)))))
