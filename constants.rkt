@@ -23,7 +23,7 @@
 
 ;; list of valid commands to the server
 ;; TODO: add info, help, respond; remove show
-(define commands '(buy use bank end ping))
+(define commands '(buy use bank end ping show))
 
 
 ;; list of every cell on the board

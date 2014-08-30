@@ -48,8 +48,8 @@
   (logf 'info "Listening for connections on port ~a.\n" port)
   (define (loop usrs)
     (define continue (cond
-      [#t #t] ;; TODO: remove this line
       [(empty? usrs) #t]
+      [#t #f] ;; TODO: remove this line
       [(= (length usrs) MAX-USERS) #f]
       [else (equal? (prompt "[c]ontinue awaiting users, or [s]tart the game?"
                             (notin '(c s))) 'c)]))
@@ -71,9 +71,10 @@
 
 ;; ----------------------------- MAIN RUNNING CODE -----------------------------
 ;; initialize connections to the clients, and the game state
-(set! st (init-server 38209)) ;; TODO: un-hardcode port
+(set! st (init-server 38215)) ;; TODO: un-hardcode port
 
 ;; TODO: allow the clients to choose their initial settlements/roads
+(logf 'debug "beginning initial settlement/road placement\n")
 (call-with-semaphore mutex (thunk
   (define (vtx a b c d e f) (list (cons a b) (cons c d) (cons e f)))
   (define (edg a b c d) (cons (cons a b) (cons c d)))
@@ -87,8 +88,9 @@
   (f (vtx 1 -1 1 1 2 0))
   (g (edg 2 -2 2 0))))
 
+(logf 'debug "entering loop\n")
 (define (loop)
   (define evt (sync (thread-receive-evt)))
-  (printf "EVT:   ~a\n" evt)
+  (printf "EVT:   ~a\n" (thread-receive))
   (loop))
 (loop)

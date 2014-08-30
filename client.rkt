@@ -6,7 +6,7 @@
 
 ;; TODO: this is very rough; do it properly!
 (printf "Which port is the server running on?\n")
-(define port 38209);; (define port (read)) TODO: unhardcode
+(define port 38215);; (define port (read)) TODO: unhardcode
 ;; (read-line) ;; take trailing newline
 (define-values (in out) (tcp-connect "localhost" port))
 (file-stream-buffer-mode out 'line)
@@ -29,6 +29,8 @@
   (error (format "response was ~s" response)))
 (printf "Successfully established connection\n")
 
+(define (interp x) (with-input-from-string x (thunk (read))))
+
 (printf "entering direct user-server REPL\n")
 (define (repl)
   (define evt (sync (wrap-evt (read-line-evt (current-input-port) 'any)
@@ -38,5 +40,5 @@
   (match evt
     [(cons _ (? eof-object?)) (printf "EOF encountered. Exiting.\n")]
     [(cons 'user msg) (fprintf nout "~a\n" msg) (repl)]
-    [(cons 'server msg) (display msg) (newline) (repl)]))
+    [(cons 'server msg) (display (interp msg)) (newline) (repl)]))
 (repl)
