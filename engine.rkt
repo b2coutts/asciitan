@@ -20,7 +20,7 @@
   (map (lambda (usr)
         (match-define (list _ out mutex) (user-io usr))
         (call-with-semaphore mutex (thunk
-          (apply (curry fprintf out (string-append "SERVER: " fstr "\n")) args))))
+          (apply (curry fprintf out (string-append "* " fstr "\n")) args))))
        (state-users st))
   (void))
 
@@ -42,6 +42,17 @@
   (define stock (make-hash))
   (map (lambda (res) (hash-set! stock res (+ (hash-ref stock res 0) 1))) lst)
   stock)
+
+;; convert a stock to a pretty-printed string
+(define/contract (stock->string stock)
+  (-> stock? string?)
+  (string-append
+    (if (hash-empty? stock) "nothing" (apply string-append (add-between
+      (map (lambda (res) (format "~a[~am~a ~a" col-esc (resource->color res)
+                                               (hash-ref stock res) res))
+           (filter (lambda (res) (not (= (hash-ref stock res 0) 0))) resources))
+     (format "~a[37m, " col-esc))))
+    (format "~a[37m" col-esc)))
 
 ;; generates a properly-weighted random roll (from 2-12)
 (define/contract (random-roll)
@@ -102,7 +113,7 @@
                             [_ #f]))
                       (adj-vertices cell)))))))))
     ;; TODO: better broadcast message
-    (broadcast st "~a gets ~a." (uname usr) stock-gain)
+    (broadcast st "~a gets ~a." (uname usr) (stock->string stock-gain))
     (give-stock! usr stock-gain))
    (state-users st))
   (void))

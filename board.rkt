@@ -83,8 +83,7 @@
         (with-color col 37 (~a (match num ['nil ""] [x x]) #:width 2))]
       [`(res ,x ,y)
         (define res (board-cell-resource b (cons x y)))
-        (define rcolor (match res
-          ['sheep 92] ['clay 31] ['grain 33] ['wood 32] ['ore 90] [_ 37]))
+        (define rcolor (resource->color res))
         (with-color col rcolor (substring (symbol->string res) 0 1))]
       [`(edge ,char ,u ,v ,x ,y)
         (define edge (cons (cons u v) (cons x y)))

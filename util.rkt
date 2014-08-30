@@ -3,7 +3,7 @@
 
 (require racket/contract)
 
-(provide member? prompt in notin logf)
+(provide member? prompt in notin resource->color logf)
 
 ;; true iff x is an element of lst
 (define/contract (member? x lst)
@@ -34,12 +34,20 @@
          (prompt msg validate in out)]
     [else input]))
 
-;; logf mutex
-(define logf-mutex (make-semaphore 1))
+;; produce the color code of the given resource
+(define/contract (resource->color res)
+  (-> symbol? integer?)
+  (match res ['sheep 92]
+             ['clay 31]
+             ['grain 33]
+             ['wood 32]
+             ['ore 90]
+             ['desert 37]))
 
 ;; logging function
 ;; TODO: timestamp
 (define printable '(info))
+(define logf-mutex (make-semaphore 1))
 (define/contract (logf type fstr . args)
   (->* ((or/c 'debug 'info) string?) () #:rest (listof any/c) void?)
   (when (member? type printable)
