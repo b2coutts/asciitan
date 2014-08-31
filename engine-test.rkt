@@ -30,10 +30,10 @@
 ;; --------------------------------- MAIN CODE ---------------------------------
 ;; create initial state
 ;; seed random number generator to make the test deterministic
-(random-seed 1234)
+(random-seed 1231)
 
 ;; function to avoid eq?
-(define (no-res) (make-hash (map (lambda (res) (cons res 0))
+(define (no-res) (make-hash (map (lambda (res) (cons res 5)) ;; TODO: testing 5
                                '(wood grain sheep ore clay))))
 
 (define ron (user "ron" '() (no-res) 95 
@@ -44,10 +44,11 @@
 (define st (state (list ron dan) ron (create-board) (shuffle dev-cards)))
 (define b (state-board st))
 
+(define (vtx a b c d e f) (list (cons a b) (cons c d) (cons e f)))
+(define (edg a b c d) (cons (cons a b) (cons c d)))
+
 ;; assign initial settlements/roads
 (define (init-rs!) ;; wrap in function to avoid polluting namespace
-  (define (vtx a b c d e f) (list (cons a b) (cons c d) (cons e f)))
-  (define (edg a b c d) (cons (cons a b) (cons c d)))
 
   (define usr (first (state-users st)))
   (define (f usr vtx) (set-board-vertex-pair! b vtx usr 'settlement))
@@ -78,8 +79,11 @@
 
 (handle-action! st ron '(end))
 (handle-action! st dan '(end))
+(handle-action! st ron `(buy road ,(edg 0 0 1 1)))
+(handle-action! st ron `(buy city ,(vtx 0 0 0 2 1 1)))
 (handle-action! st ron '(end))
 (handle-action! st dan '(end))
 (handle-action! st ron '(end))
+(handle-action! st dan '(end))
 
 (display (state->string st))

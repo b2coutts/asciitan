@@ -60,8 +60,9 @@
   (+ (random 6) (random 6) 2))
 
 ;; determines whether or not the user can afford a given price (hash)
-(define/contract (can-afford? usr price)
+(define/contract (can-afford? usr item)
   (-> user? item? boolean?)
+  (define price (hash-ref item-prices item))
   (foldr (lambda (x y) (and x y)) #t
     (hash-map (user-res usr) (lambda (res amt) (>= amt (hash-ref price res))))))
 
@@ -183,7 +184,7 @@
   (-> (or/c state? #f) user? (cons/c command? list?) response?)
   (logf 'debug "handle-action!: usr=~a, act=~s\n" (user-name usr) act)
   (match act
-    [`(buy ,item ,args) (buy-item! st usr item)]
+    [`(buy ,item ,args) (buy-item! st usr item args)]
     [`(use ,card-num) (use-card! st usr card-num)] ;; TODO: use card name instead?
     [`(bank ,res-list ,target) (bank! st usr res-list target)]
     [`(end) (change-turn! st)]
