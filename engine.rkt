@@ -119,6 +119,23 @@
    (state-users st))
   (void))
 
+;; given a user and a vertex, #t iff the user is allowed to build at the vertex
+(define/contract (can-build? b usr vtx)
+  (-> board? user? vertex? boolean?)
+  ;; list of all neighbours of vtx, and vtx itself
+  (define nbrs
+    (filter (lambda (v) (> (length (filter (curryr member? vtx) v)) 1))
+            board-vertex-list))
+
+  ;; list of all edges adjacent to vtx
+  (define edgs (filter (lambda (e) (match-define (cons a b) e)
+                        (= (length (filter (curryr member? vtx) (list a b))) 2))
+                       board-edge-list))
+
+  (and (andmap (lambda (v) (not (board-vertex-pair b v))) nbrs)
+       (ormap (lambda (e) (equal? (board-road-owner b e) usr)) edgs)))
+       
+
 ;; TODO: handle endgame conditions
 ;; TODO: handle roll #7
 (define/contract (change-turn! st)
@@ -144,8 +161,8 @@
   (cond
     [(not (equal? usr (state-turnu st))) "It's not your turn!"]
     [(not (can-afford? usr item)) (format "You can't afford ~a!" item)]
-    [(and (building? item) (board-vertex-pair b args))
-      "That space is already occupied!"]
+    [(and (building? item) (not (can-build? b usr args)))
+      "You can't build a building there!"]
     [(and (equal? item 'road) (board-road-owner b args))
       "That space is already occupied!"]
     [(and (equal? item 'dev-card) (empty? (state-cards st)))
@@ -163,7 +180,7 @@
               (broadcast st "~a has built a road at ~a." (uname usr)
                 (edge->string args))]
             ['dev-card
-              (define draw (pop-dev-card!))
+              (define draw (pop-dev-card! st))
               (set-user-cards! usr (cons draw (user-cards usr)))
               (broadcast st "~a has built a dev card." (uname usr))
               (format "You draw a ~a." draw)])]))

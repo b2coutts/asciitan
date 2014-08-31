@@ -82,6 +82,7 @@
 (handle-action! st ron `(buy road ,(edg 0 0 1 1)))
 (handle-action! st ron `(buy city ,(vtx 0 0 0 2 1 1)))
 (handle-action! st ron '(end))
+(handle-action! st dan `(buy dev-card ,(vtx 0 0 0 2 1 1)))
 (handle-action! st dan '(end))
 (handle-action! st ron '(end))
 (handle-action! st dan '(end))
