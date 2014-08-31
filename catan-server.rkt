@@ -49,7 +49,6 @@
   (define (loop usrs)
     (define continue (cond
       [(empty? usrs) #t]
-      [#t #f] ;; TODO: remove this line
       [(= (length usrs) MAX-USERS) #f]
       [else (equal? (prompt "[c]ontinue awaiting users, or [s]tart the game?"
                             (notin '(c s))) 'c)]))
@@ -64,14 +63,14 @@
         (logf 'info "Connection established; name is '~a'\n" (user-name usr))
         (define parent (current-thread))
         (thread (thunk (run-listener parent usr out)))
-        (sync (thread-receive-evt)) ;; TODO: do this better
+        (sync (thread-receive-evt)) ;; TODO: do this better?
         (loop (cons usr usrs))]
       [else usrs]))
   (init-state (loop '())))
 
 ;; ----------------------------- MAIN RUNNING CODE -----------------------------
 ;; initialize connections to the clients, and the game state
-(set! st (init-server 38215)) ;; TODO: un-hardcode port
+(set! st (init-server))
 
 ;; TODO: allow the clients to choose their initial settlements/roads
 (logf 'debug "beginning initial settlement/road placement\n")

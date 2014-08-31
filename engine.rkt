@@ -3,18 +3,11 @@
 
 (require "board.rkt" "cell.rkt" "basic.rkt" "data.rkt" "constants.rkt" "adv.rkt")
 
-(provide
-  ;; TODO: remove these 2?
-  user
-  state
-
-  init-state
-  handle-action!
-)
+(provide init-state handle-action!)
 
 ;; -------------------------- SMALL HELPER FUNCTIONS --------------------------
 ;; broadcast a server message to everyone
-;; TODO: remove SERVER
+;; TODO: remove * before message
 (define/contract (broadcast st fstr . args)
   (->* (state? string?) #:rest (listof any/c) void?)
   (map (lambda (usr)
@@ -113,7 +106,6 @@
                             [(cons (== usr) 'settlement) (list res)]
                             [_ #f]))
                       (adj-vertices cell)))))))))
-    ;; TODO: better broadcast message
     (broadcast st "~a gets ~a." (uname usr) (stock->string stock-gain))
     (give-stock! usr stock-gain))
    (state-users st))
@@ -196,7 +188,7 @@
   (void))
 
 ;; ------------------------------- API FUNCTIONS -------------------------------
-;; TODO: description
+;; handle a request from the user
 (define/contract (handle-action! st usr act)
   (-> (or/c state? #f) user? (cons/c command? list?) response?)
   (logf 'debug "handle-action!: usr=~a, act=~s\n" (user-name usr) act)

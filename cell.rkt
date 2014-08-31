@@ -1,11 +1,7 @@
 ;; contains various functions for dealing with cells/coordinates
 #lang racket
 
-(require
-  racket/contract
-
-  "basic.rkt"
-)
+(require racket/contract "basic.rkt")
 
 (provide
   cell?
@@ -88,8 +84,6 @@
   (list (cons (- x 1) (- y 1)) (cons (- x 1) (+ y 1))
         (cons x (- y 2)) (cons x (+ y 2))
         (cons (+ x 1) (- y 1)) (cons (+ x 1) (+ y 1))))
-
-;; TODO: edges adjacent to a cell?
 
 ;; produces a list of the vertices adjacent to a cell
 (define/contract (adj-vertices cell)

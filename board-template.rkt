@@ -2,7 +2,7 @@
 #lang racket
 
 (provide board-template)
-;; TODO: add in cities/settlements
+
 (define board-template `(
   (rep 20 sp) (hedge -1 5 0 4 0 6 1 5) nl
   (rep 13 sp) (rep 5 #\s) sp (edge #\/ -1 5 0 4) (label 0 4)

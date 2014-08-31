@@ -4,7 +4,6 @@
 (require "data.rkt" "constants.rkt" "board.rkt" "cell.rkt" "engine.rkt"
          "basic.rkt")
 
-;; TODO: move some of these into existing modules?
 ;; ----------------------------- UTILITY FUNCTIONS -----------------------------
 ;; produce a human-readable string for the given user
 (define/contract (user->string usr)
@@ -33,7 +32,8 @@
 (random-seed 1231)
 
 ;; function to avoid eq?
-(define (no-res) (make-hash (map (lambda (res) (cons res 5)) ;; TODO: testing 5
+;; TODO: right now, each user starts with 5 of everything for testing purposes
+(define (no-res) (make-hash (map (lambda (res) (cons res 5))
                                '(wood grain sheep ore clay))))
 
 (define ron (user "ron" '() (no-res) 95 

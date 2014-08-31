@@ -26,7 +26,7 @@
 (define items '(city settlement dev-card road))
 
 ;; list of valid commands to the server
-;; TODO: add info, help, respond; remove show
+;; TODO: add info, help, respond, say; remove show
 (define commands '(buy use bank end ping show))
 
 ;; ANSI terminal color code escape character

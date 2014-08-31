@@ -1,21 +1,20 @@
 ;; client for connecting to the soa server
+;; TODO: this is very rough; do it properly!
 #lang racket
 
 ;; macro for writing something over TCP
 (define-syntax-rule (send msg out) (fprintf out "~s\n" msg))
 
-;; TODO: this is very rough; do it properly!
 (printf "Which port is the server running on?\n")
-(define port 38215);; (define port (read)) TODO: unhardcode
-;; (read-line) ;; take trailing newline
+(define port (read))
+(read-line) ;; take trailing newline
 (define-values (in out) (tcp-connect "localhost" port))
 (file-stream-buffer-mode out 'line)
 
 (printf "Which name should be used?\n")
-;;(define name (read))
+(define name (read))
 
-;; (fprintf out "\"b2coutts\"\n")
-(send "b2coutts" out)
+(send name out)
 (define listener-port (read in))
 
 (define-values (nin nout) (tcp-connect "localhost" listener-port))
@@ -36,7 +35,6 @@
   (define evt (sync (wrap-evt (read-line-evt (current-input-port) 'any)
                               (curry cons 'user))
                     (wrap-evt (read-line-evt nin 'any) (curry cons 'server))))
-  ;; (printf "DEBUG: evt is ~s\n" evt)
   (match evt
     [(cons _ (? eof-object?)) (printf "EOF encountered. Exiting.\n")]
     [(cons 'user msg) (fprintf nout "~a\n" msg) (repl)]
