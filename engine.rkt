@@ -47,7 +47,7 @@
 (define/contract (stock->string stock)
   (-> stock? string?)
   (string-append
-    (if (hash-empty? stock) "nothing" (apply string-append (add-between
+    (if (zero? (hash-count stock)) "nothing" (apply string-append (add-between
       (map (lambda (res) (format "~a[~am~a ~a" col-esc (resource->color res)
                                                (hash-ref stock res) res))
            (filter (lambda (res) (not (= (hash-ref stock res 0) 0))) resources))
