@@ -114,28 +114,29 @@
   (define (g usr edge) (set-board-road-owner! (state-board st) edge usr))
   (void)
 
-  (g (first (state-users st)) (edg 0 0 0 2))
-  (g (first (state-users st)) (edg -3 -3 -2 -2))
+  ;; (g (first (state-users st)) (edg 0 0 0 2))
+  ;; (g (first (state-users st)) (edg -3 -3 -2 -2))
 
+  (define usrs (state-users st))
 
-  #|
-  (match-define (list ron dan bob) (state-users st))
+  (f (first usrs) (vtx -2 2 -1 1 -1 3))
+  (g (first usrs) (edg -2 2 -1 1))
+  (f (first usrs) (vtx 1 1 2 0 2 2))
+  (g (first usrs) (edg 1 1 2 2))
 
-  (f ron (vtx -2 2 -1 1 -1 3))
-  (g ron (edg -2 2 -1 1))
-  (f ron (vtx 1 1 2 0 2 2))
-  (g ron (edg 1 1 2 2))
+  (when (>= (length usrs) 2)
+    (f (second usrs) (vtx 0 0 0 2 1 1))
+    (g (second usrs) (edg 0 0 0 2))
+    (f (second usrs) (vtx -1 -3 -1 -1 0 -2))
+    (g (second usrs) (edg -1 -3 0 -2)))
 
-  (f dan (vtx 0 0 0 2 1 1))
-  (g dan (edg 0 0 0 2))
-  (f dan (vtx -1 -3 -1 -1 0 -2))
-  (g dan (edg -1 -3 0 -2))
+  (when (>= (length usrs) 3)
+    (f (third usrs) (vtx 1 -3 1 -1 2 -2))
+    (g (third usrs) (edg 1 -1 2 -2))
+    (f (third usrs) (vtx -2 -2 -2 0 -1 -1))
+    (g (third usrs) (edg -2 -2 -1 -1)))
 
-  (f bob (vtx 1 -3 1 -1 2 -2))
-  (g bob (edg 1 -1 2 -2))
-  (f bob (vtx -2 -2 -2 0 -1 -1))
-  (g bob (edg -2 -2 -1 -1))
-  |#
+  ;; TODO: 4
 ))
 
 (semaphore-post mutex)
