@@ -7,12 +7,12 @@
 
 (printf "Which port is the server running on?\n")
 (define port (read))
-(read-line) ;; take trailing newline
+(void (read-line)) ;; take trailing newline
 (define-values (in out) (tcp-connect "localhost" port))
 (file-stream-buffer-mode out 'line)
 
 (printf "Which name should be used?\n")
-(define name (read))
+(define name (read-line))
 
 (send name out)
 (define listener-port (read in))

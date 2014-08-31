@@ -10,6 +10,12 @@
 
 (define-syntax-rule (send msg out) (fprintf out "~s\n" msg))
 
+;; produce a stock of empty resources for a user
+(define/contract (empty-stock)
+  (-> stock?)
+  ;; TODO: change from 5 to 0
+  (make-hash (map (lambda (res) (cons res 5)) '(wood grain sheep ore clay))))
+
 ;; begins interacting with a given user on the given input/output ports
 ;; TODO: code for ending
 ;; TODO: prompting
@@ -58,15 +64,41 @@
         (define-values (in out) (tcp-accept listener))
         (file-stream-buffer-mode out 'line) ;; TODO: is line-buffering okay?
         (logf 'debug "connection made, waiting for name...\n")
-        (define usr (user (read in) '() '#hash() (list-ref colors (length usrs))
+        (define usr (user (read in) '() (empty-stock)
+                          (list-ref colors (length usrs))
                           (list in out (make-semaphore 1))))
         (logf 'info "Connection established; name is '~a'\n" (user-name usr))
         (define parent (current-thread))
         (thread (thunk (run-listener parent usr out)))
         (sync (thread-receive-evt)) ;; TODO: do this better?
+        (thread-receive)
         (loop (cons usr usrs))]
       [else usrs]))
   (init-state (loop '())))
+
+;; TODO: remove this section
+;; ----------------- UTILITY FUNCTIONS STOLEN FROM ENGINE-TEST -----------------
+;; produce a human-readable string for the given user
+(define/contract (user->string usr)
+  (-> user? string?)
+  (string-append
+    (format "~a[~am~a~a[37m: " (integer->char #x1b) (user-color usr)
+            (user-name usr) (integer->char #x1b))
+    (format "dev-cards: ~a; " (user-cards usr))
+    (apply (curry format "wood: ~a, grain: ~a, sheep: ~a, ore: ~a, clay: ~a\n")
+           (map (lambda (res) (hash-ref (user-res usr) res))
+                '(wood grain sheep ore clay)))))
+
+;; produce a human-readable string for a state
+(define/contract (state->string st [show-dev-cards #f])
+  (->* (state?) (boolean?) string?)
+  (string-append
+    "---------------------------------------------------------------------\n"
+    (format "~a's turn.\n" (user-name (state-turnu st)))
+    (board->string (state-board st))
+    (apply string-append (map user->string (state-users st)))
+    (if show-dev-cards (format "~a\n" (state-cards st)) "")
+    "---------------------------------------------------------------------\n"))
 
 ;; ----------------------------- MAIN RUNNING CODE -----------------------------
 ;; initialize connections to the clients, and the game state
@@ -78,14 +110,28 @@
   (define (vtx a b c d e f) (list (cons a b) (cons c d) (cons e f)))
   (define (edg a b c d) (cons (cons a b) (cons c d)))
 
-  (define usr (first (state-users st)))
-  (define (f vtx) (set-board-vertex-pair! (state-board st) vtx usr 'settlement))
-  (define (g edge) (set-board-road-owner! (state-board st) edge usr))
+  (define (f usr vtx) (set-board-vertex-pair! (state-board st) vtx usr 'settlement))
+  (define (g usr edge) (set-board-road-owner! (state-board st) edge usr))
 
-  (f (vtx -1 -1 0 -2 0 0))
-  (g (edg 0 -2 0 0))
-  (f (vtx 1 -1 1 1 2 0))
-  (g (edg 2 -2 2 0))))
+  (match-define (list ron dan bob) (state-users st))
+
+  (f ron (vtx -2 2 -1 1 -1 3))
+  (g ron (edg -2 2 -1 1))
+  (f ron (vtx 1 1 2 0 2 2))
+  (g ron (edg 1 1 2 2))
+
+  (f dan (vtx 0 0 0 2 1 1))
+  (g dan (edg 0 0 0 2))
+  (f dan (vtx -1 -3 -1 -1 0 -2))
+  (g dan (edg 0 -4 0 -2))
+
+  (f bob (vtx 1 -3 1 -1 2 -2))
+  (g bob (edg 1 -1 2 -2))
+  (f bob (vtx -2 -2 -2 0 -1 -1))
+  (g bob (edg -1 -3 -1 -1))))
+
+(printf "Initial state:\n")
+(display (state->string st))
 
 (logf 'debug "entering loop\n")
 (define (loop)
