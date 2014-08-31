@@ -119,27 +119,27 @@ with vertices labeled:
 --------------------------------------------------------------------------------
 
 Total look:
-                    _____                    |           Console/chat           
-             sssss /A    \ ?????             |----------------------------------
-             _____/   10  \_____             | ron: i'a girffe mcgee         
-            /B    \   c   /C    \            | * ron rolls a 10              
-      _____/   4   \_____/   4   \_____      | * ron gains 1 wood, 1 ore     
-   ? /D    \   s   /E    \   c   /F    \ ?   | * dan gains 2 clay               
-  ? /   2   \S____/   6   \_____/   6   \ ?  | * bob gains nothing              
-    \   o   /G    \   w   /H   T\   s   /    | * lou gains 2 wood, 1 clay, 3     
-     \_____/   12  \_____/       \_____/     |   grain, 1 ore, 1 sheep          
-     /I    \   s   /J    \   d   /K    \     | dan: :(                          
-    /   3   \_____/   11  \____S/   9   \    | lou: lolololol                   
-  o \   g   /L    \   g   /M    \   w   / c  | * ron builds a road at OS        
-   o \_____/   8   \S____/   5   \_____/ c   | * ron builds a settlement at ORS 
-     /N    \   o   /O    \   w   /P    \     | * it's dan's turn                
-    /   9   \_____/   5   \_____/   8   \    | * dan rolls a 3                  
-    \   s   /Q    \   g   /R    \   c   /    | * ron gains nothing                               
-     \_____/   10  \_____/   3   \S____/     | * dan gains nothing              
-         g \   o   /S    \   g   / w         | * bob gains 2 clay               
-          g \_____/   11  \_____/ w          | * lou gains nothing              
-                  \   w   /                  | * bob banks 4 clay for a wheat   
-                   \_____/                   | * bob builds a dev-card          
-                    ?????                    | bob: more like bobs mcgee        
+                  _____                   |           Console/chat            
+           sssss /A    \ ?????            |-------------------------------------
+           _____/   10  \_____            | ron: i'a girffe mcgee          
+          /B    \   c   /C    \           | * ron rolls a 10               
+    _____/   4   \_____/   4   \_____     | * ron gains 1 wood, 1 ore      
+ ? /D    \   s   /E    \   c   /F    \ ?  | * dan gains 2 clay                
+? /   2   \S____/   6   \_____/   6   \ ? | * bob gains nothing               
+  \   o   /G    \   w   /H   T\   s   /   | * lou gains 2 wood, 1 clay, 3 grain,
+   \_____/   12  \_____/       \_____/    |   1 ore, 1 sheep           
+   /I    \   s   /J    \   d   /K    \    | dan: :(                           
+  /   3   \_____/   11  \____S/   9   \   | lou: lolololol                    
+o \   g   /L    \   g   /M    \   w   / c | * ron builds a road at OS         
+ o \_____/   8   \S____/   5   \_____/ c  | * ron builds a settlement at ORS  
+   /N    \   o   /O    \   w   /P    \    | * it's dan's turn                 
+  /   9   \_____/   5   \_____/   8   \   | * dan rolls a 3                   
+  \   s   /Q    \   g   /R    \   c   /   | * ron gains nothing                                
+   \_____/   10  \_____/   3   \S____/    | * dan gains nothing               
+       g \   o   /S    \   g   / w        | * bob gains 2 clay                
+        g \_____/   11  \_____/ w         | * lou gains nothing               
+                \   w   /                 | * bob banks 4 clay for a wheat    
+                 \_____/                  | * bob builds a dev-card           
+                  ?????                   | bob: more like bobs mcgee         
 Players: ron, dan, bob, lou
 > prompt
