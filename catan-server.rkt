@@ -126,12 +126,12 @@
   (f dan (vtx 0 0 0 2 1 1))
   (g dan (edg 0 0 0 2))
   (f dan (vtx -1 -3 -1 -1 0 -2))
-  (g dan (edg 0 -4 0 -2))
+  (g dan (edg -1 -3 0 -2))
 
   (f bob (vtx 1 -3 1 -1 2 -2))
   (g bob (edg 1 -1 2 -2))
   (f bob (vtx -2 -2 -2 0 -1 -1))
-  (g bob (edg -1 -3 -1 -1))
+  (g bob (edg -2 -2 -1 -1))
 ))
 
 (semaphore-post mutex)
