@@ -9,7 +9,7 @@
 
   cell->label label->cell
 
-  edge->string vertex->string
+  edge->string vertex->string string->edge string->vertex
 )
 
 ;; produce the color code of the given resource
@@ -34,10 +34,11 @@
   (-> cell-valid? symbol?)
   (cdr (assoc cell (map (lambda (x) (cons (cdr x) (car x))) cell-labels))))
 
-;; produce the cell associated with the given label
+;; produce the cell associated with the given label; #f if the label is invalid
 (define/contract (label->cell lbl)
-  (-> symbol? cell-valid?)
-  (cdr (assoc lbl cell-labels)))
+  (-> symbol? (or/c cell-valid? #f))
+  (define result (assoc lbl cell-labels))
+  (if result (cdr result) #f))
 
 ;; pretty-print an edge
 (define/contract (edge->string edg)
@@ -74,3 +75,42 @@
 
   (format "~a~a.~a~a" (style->string '(40 37 #t #f)) (cell->label cell) pt
                       (style->string '(40 37 #f #f))))
+
+;; helper function; "adds" two cells as vectors
+(define/contract (cell-add c1 c2)
+  (-> cell? cell? cell?)
+  (cons (+ (car c1) (car c2)) (+ (cdr c1) (cdr c2))))
+
+;; read an edge from a string; #f if the string is invalid
+(define/contract (string->edge str)
+  (-> string? (or/c edge? #f))
+  (match (string->list str)
+    [`(,label #\- ,num)
+      (define cell (label->cell (string->symbol (list->string (list label)))))
+      (cond
+        [cell (edge-normalize (cons cell (cell-add cell (match num
+          [#\1 (cons 0 2)]
+          [#\2 (cons 1 1)]
+          [#\3 (cons 1 -1)]
+          [#\4 (cons 0 -2)]
+          [#\5 (cons -1 -1)]
+          [#\6 (cons -1 1)]))))]
+        [else #f])]
+    [_ #f]))
+
+;; read a vertex from a string; #f if the string is invalid
+(define/contract (string->vertex str)
+  (-> string? (or/c vertex? #f))
+  (match (string->list str)
+    [`(,label #\. ,num)
+      (define c (label->cell (string->symbol (list->string (list label)))))
+      (cond
+        [c (vertex-normalize (match num
+          [#\1 (list c (cell-add c (cons -1 1)) (cell-add c (cons 0 2)))]
+          [#\2 (list c (cell-add c (cons 0 2)) (cell-add c (cons 1 1)))]
+          [#\3 (list c (cell-add c (cons 1 1)) (cell-add c (cons 1 -1)))]
+          [#\4 (list c (cell-add c (cons 1 -1)) (cell-add c (cons 0 -2)))]
+          [#\5 (list c (cell-add c (cons 0 -2)) (cell-add c (cons -1 -1)))]
+          [#\6 (list c (cell-add c (cons -1 -1)) (cell-add c (cons -1 1)))]))]
+        [else #f])]
+    [_ #f]))

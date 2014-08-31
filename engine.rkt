@@ -223,6 +223,7 @@
   (-> (or/c state? #f) user? any/c (or/c response? void?))
   (logf 'debug "handle-action!: usr=~a, act=~s\n" (user-name usr) act)
   (match act
+    [`(buy dev-card) (buy-item! st usr 'dev-card (void))]
     [`(buy ,item ,args) (buy-item! st usr item args)]
     [`(use ,card-num) (use-card! st usr card-num)] ;; TODO: use card name instead?
     [`(bank ,res-list ,target) (bank! st usr res-list target)]
@@ -230,6 +231,7 @@
     [`(show board) (list 'raw (board->string (state-board st)))]
     [`(show resources)
       (list 'message (format "You have ~a." (stock->string (user-res usr))))]
+    ;; TODO: remove ping?
     [`(ping ,str) (list 'message (format "pong ~a" str))]
     [`(say ,msg) (void (map (curry say st usr msg) (state-users st)))]
     [_ (list 'message (format "Invalid command: ~s" act))]))

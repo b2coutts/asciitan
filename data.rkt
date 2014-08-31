@@ -14,6 +14,7 @@
   dev-card?
   item?
   command?
+  showable?
   style?
   stock?
   response?
@@ -25,6 +26,7 @@
 (define dev-card? (in dev-cards))
 (define item?     (in items))
 (define command?  (in commands))
+(define showable? (in showables))
 
 ;; represents the current ANSI terminal style; (bg fg bold underline)
 (define style? (list/c integer? integer? boolean? boolean?))
