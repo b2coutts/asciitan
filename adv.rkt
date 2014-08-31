@@ -62,10 +62,11 @@
 (define/contract (vertex->string vtx)
   (-> vertex? string?)
   (define cell (first (filter (curryr member? board-cell-list) vtx)))
-  (define least (first (remove cell vtx)))
+  (match-define (list least most) (remove cell vtx))
 
   (define pt (match (cons (- (car least) (car cell)) (- (cdr least) (cdr cell)))
-    [(cons -1 -1) (match (last (remove cell vtx))
+    [(cons -1 -1) (match (cons (- (car most) (car cell))
+                               (- (cdr most) (cdr cell)))
                     [(cons -1 1) 6]
                     [(cons 0 -2) 5])]
     [(cons -1 1)  1]

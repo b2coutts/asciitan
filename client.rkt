@@ -61,7 +61,13 @@
           (cond
             [(and num (integer? num) (>= num 0)) `(use ,num)]
             [else (printf "! invalid card number: ~a\n" numstr)])]
-        ;; TODO: bank
+        [(cons "bank" (cons target lst))
+          (define err (ormap (lambda (res) (cond
+                              [(resource? (string->symbol res)) #f]
+                              [else (printf "! invalid resource: ~a\n" res)]))
+                             (cons target lst)))
+          (if err (void)
+            `(bank ,(map string->symbol lst) ,(string->symbol target)))]
         [`("end") '(end)]
         [`("show" ,thing) (cond
           [(showable? (string->symbol thing)) `(show ,(string->symbol thing))]

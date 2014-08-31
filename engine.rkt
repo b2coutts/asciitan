@@ -53,11 +53,11 @@
   (+ (random 6) (random 6) 2))
 
 ;; determines whether or not the user can afford a given price (hash)
-(define/contract (can-afford? usr item)
-  (-> user? item? boolean?)
-  (define price (hash-ref item-prices item))
+(define/contract (can-afford? usr price)
+  (-> user? stock? boolean?)
   (foldr (lambda (x y) (and x y)) #t
-    (hash-map (user-res usr) (lambda (res amt) (>= amt (hash-ref price res))))))
+    (hash-map (user-res usr) (lambda (res amt)
+                              (>= amt (hash-ref price res 0))))))
 
 ;; removes a dev card from the top of the stack
 (define/contract (pop-dev-card! st)
@@ -167,13 +167,20 @@
       (broadcast st "~a rolls a ~a." (uname (state-turnu st)) roll)
       (apply-roll! st roll)]))
 
+;; spends a given stock of the user's resources
+(define/contract (spend-stock! usr stock)
+  (-> user? stock? void?)
+  (hash-map stock (lambda (res amt)
+    (hash-set! (user-res usr) res (- (hash-ref (user-res usr) res) amt))))
+  (void))
+
 ;; -------------------------- MAJOR HELPER FUNCTIONS --------------------------
 (define/contract (buy-item! st usr item args)
   (-> state? user? item? (or/c vertex? edge? void?) (or/c response? void?))
   (define b (state-board st))
   (cond
     [(not (equal? usr (state-turnu st))) (list 'message "It's not your turn!")]
-    [(not (can-afford? usr item))
+    [(not (can-afford? usr (hash-ref item-prices item)))
       (list 'message (format "You can't afford ~a!" item))]
     [(and (building? item) (not (can-build? b usr args)))
       (list 'message "You can't build a building there!")]
@@ -181,9 +188,7 @@
       (list 'message "You can't build a road there!")]
     [(and (equal? item 'dev-card) (empty? (state-cards st)))
       (list 'message "There are no more dev cards left to draw!")]
-    [else (hash-map (hash-ref item-prices item) (lambda (res amt)
-                      (hash-set! (user-res usr) res
-                                 (- (hash-ref (user-res usr) res) amt))))
+    [else (spend-stock! usr (hash-ref item-prices item))
           (match item
             [(or 'city 'settlement)
               (set-board-vertex-pair! b args usr item)
@@ -204,10 +209,20 @@
   (-> state? user? integer? (or/c response? void?))
   (void))
 
-;; TODO
+;; TODO: trading posts
 (define/contract (bank! st usr res-list target)
   (-> state? user? (listof resource?) resource? (or/c response? void?))
-  (void))
+  (define cost (list->stock res-list))
+  (cond
+    [(not (= (length res-list) 4))
+      (list 'message "You must trade 4 resources to the bank!")]
+    [(not (can-afford? usr cost))
+      (list 'message (format "You don't have ~a!" (stock->string cost)))]
+    [else (spend-stock! usr cost) (give-res! usr target)
+      (broadcast st "~a traded ~a for ~a[~am1 ~a~a" (uname usr)
+                 (stock->string cost) col-esc (resource->color target)
+                 target (style->string '(40 37 #f #f)))]))
+
 
 ;; say a message to a user
 (define/contract (say st sender msg usr)
