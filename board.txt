@@ -143,3 +143,15 @@ o \   g   /L    \   g   /M    \   w   / c | * ron builds a road at OS
                   ?????                   | bob: more like bobs mcgee         
 Players: ron, dan, bob, lou
 > prompt
+
+How to identify edges and vertices:
+    
+      Edges         Vertices
+
+        1           
+      _____        1_____2  
+   6 /     \ 2     /     \  
+    /       \    6/       \3
+    \       /     \       / 
+   5 \_____/ 3     \_____/
+        4          5     4
