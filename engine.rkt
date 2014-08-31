@@ -216,6 +216,27 @@
   (call-with-semaphore mutex (thunk
     (fprintf out "~s\n" (list 'say (uname sender) msg)))))
 
+;; produce a string of info about a thing
+(define/contract (show st usr thing)
+  (-> state? user? showable? string?)
+  (match thing
+    ['board (board->string (state-board st))]
+    ['resources (format "You have ~a." (stock->string (user-res usr)))]
+    ['users (string-append "Players are " (list->string (apply append 
+      (add-between (map (compose string->list uname) (state-users st))
+                   '(#\, #\space)))))]
+    ['dev-cards (cond
+      [(empty? (user-cards usr)) "You have no dev cards."]
+      [else (string-append "Your dev cards: " (list->string (apply append
+       (add-between (map (compose string->list symbol->string) (user-cards usr))
+                    '(#\, #\space)))))])]
+    ['all (string-append
+      (show st usr 'board)
+      (show st usr 'resources) "\n"
+      (show st usr 'dev-cards) "\n"
+      (show st usr 'users) "\n")]))
+
+
 ;; ------------------------------- API FUNCTIONS -------------------------------
 ;; handle a request from the user
 ;; TODO: replace any/c (3rd arg to ->) with (cons/c command? list?)
@@ -228,11 +249,8 @@
     [`(use ,card-num) (use-card! st usr card-num)] ;; TODO: use card name instead?
     [`(bank ,res-list ,target) (bank! st usr res-list target)]
     [`(end) (change-turn! st)]
-    [`(show board) (list 'raw (board->string (state-board st)))]
-    [`(show resources)
-      (list 'message (format "You have ~a." (stock->string (user-res usr))))]
-    ;; TODO: remove ping?
-    [`(ping ,str) (list 'message (format "pong ~a" str))]
+    [`(show ,(or 'board 'all)) (list 'raw (show st usr (second act)))]
+    [`(show ,thing) (list 'message (show st usr thing))]
     [`(say ,msg) (void (map (curry say st usr msg) (state-users st)))]
     [_ (list 'message (format "Invalid command: ~s" act))]))
 

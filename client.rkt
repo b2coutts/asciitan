@@ -7,6 +7,8 @@
 ;; macro for writing something over TCP
 (define-syntax-rule (send msg out) (fprintf out "~s\n" msg))
 
+(display (style->string '(40 37 #f #f)))
+
 (printf "Which port is the server running on?\n")
 (define port (read))
 (void (read-line)) ;; take trailing newline

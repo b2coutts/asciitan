@@ -16,6 +16,7 @@
   [road . #hash([ore . 0] [grain . 0] [clay . 1] [wood . 1] [sheep . 0])]))
 
 ;; ordered list of all dev cards
+;; TODO: what about monopoly? double-check this list
 (define dev-cards
   (append (build-list 14 (const 'knight))
           (build-list 5  (const 'veep)) ;; TODO: separate these?
@@ -30,7 +31,7 @@
 (define commands '(buy use bank end ping show))
 
 ;; list of showable things (i.e., valid arguments to show)
-(define showables '(board resources))
+(define showables '(board resources users dev-cards all))
 
 ;; list of valid response types (from the server to the client)
 (define responses '(broadcast message raw say))
