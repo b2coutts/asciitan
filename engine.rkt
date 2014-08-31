@@ -7,13 +7,13 @@
 
 ;; -------------------------- SMALL HELPER FUNCTIONS --------------------------
 ;; broadcast a server message to everyone
-;; TODO: remove SERVER
 (define/contract (broadcast st fstr . args)
   (->* (state? string?) #:rest (listof any/c) void?)
   (map (lambda (usr)
         (match-define (list _ out mutex) (user-io usr))
+        (define str (apply (curry format fstr) args))
         (call-with-semaphore mutex (thunk
-          (apply (curry fprintf out (string-append "* " fstr "\n")) args))))
+          (fprintf out "~s\n" (list 'broadcast str)))))
        (state-users st))
   (void))
 
@@ -169,17 +169,17 @@
 
 ;; -------------------------- MAJOR HELPER FUNCTIONS --------------------------
 (define/contract (buy-item! st usr item args)
-  (-> state? user? item? (or/c vertex? edge? void?) response?)
+  (-> state? user? item? (or/c vertex? edge? void?) (or/c response? void?))
   (define b (state-board st))
   (cond
     [(not (equal? usr (state-turnu st))) "It's not your turn!"]
     [(not (can-afford? usr item)) (format "You can't afford ~a!" item)]
     [(and (building? item) (not (can-build? b usr args)))
-      "You can't build a building there!"]
+      (list 'message "You can't build a building there!")]
     [(and (equal? item 'road) (not (can-road? b usr args)))
-      "You can't build a road there!"]
+      (list 'message "You can't build a road there!")]
     [(and (equal? item 'dev-card) (empty? (state-cards st)))
-      "There are no more dev cards left to draw!"]
+      (list 'message "There are no more dev cards left to draw!")]
     [else (hash-map (hash-ref item-prices item) (lambda (res amt)
                       (hash-set! (user-res usr) res
                                  (- (hash-ref (user-res usr) res) amt))))
@@ -196,30 +196,34 @@
               (define draw (pop-dev-card! st))
               (set-user-cards! usr (cons draw (user-cards usr)))
               (broadcast st "~a has built a dev card." (uname usr))
-              (format "You draw a ~a." draw)])]))
+              (list 'message (format "You draw a ~a." draw))])]))
 
 ;; TODO
 (define/contract (use-card! st usr card-num)
-  (-> state? user? integer? response?)
+  (-> state? user? integer? (or/c response? void?))
   (void))
 
 ;; TODO
 (define/contract (bank! st usr res-list target)
-  (-> state? user? (listof resource?) resource? response?)
+  (-> state? user? (listof resource?) resource? (or/c response? void?))
   (void))
 
 ;; ------------------------------- API FUNCTIONS -------------------------------
 ;; handle a request from the user
+;; TODO: replace any/c (3rd arg to ->) with (cons/c command? list?)
 (define/contract (handle-action! st usr act)
-  (-> (or/c state? #f) user? (cons/c command? list?) response?)
+  (-> (or/c state? #f) user? any/c (or/c response? void?))
   (logf 'debug "handle-action!: usr=~a, act=~s\n" (user-name usr) act)
   (match act
     [`(buy ,item ,args) (buy-item! st usr item args)]
     [`(use ,card-num) (use-card! st usr card-num)] ;; TODO: use card name instead?
     [`(bank ,res-list ,target) (bank! st usr res-list target)]
     [`(end) (change-turn! st)]
-    [`(show board) (board->string (state-board st))]
-    [`(ping ,str) (format "pong ~a" str)]))
+    [`(show board) (list 'raw (board->string (state-board st)))]
+    [`(show resources)
+      (list 'message (format "You have ~a." (stock->string (user-res usr))))]
+    [`(ping ,str) (list 'message (format "pong ~a" str))]
+    [_ (list 'message (format "Invalid command: ~s" act))]))
 
 ;; creates a new state, given a non-empty list of users
 (define/contract (init-state usrs)

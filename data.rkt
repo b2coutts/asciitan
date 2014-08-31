@@ -33,7 +33,7 @@
 (define stock? (hash/c resource? integer?))
 
 ;; represents a response sent back to the user
-(define response? (or/c string? void?))
+(define response? (cons/c (in responses) list?))
 
 (define-struct/contract user (
   [name string?]                      ;; name of the user

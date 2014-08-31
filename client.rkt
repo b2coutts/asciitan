@@ -17,26 +17,25 @@
 (send name out)
 (define listener-port (read in))
 
-(define-values (nin nout) (tcp-connect "localhost" listener-port))
-(file-stream-buffer-mode nout 'line)
-
-(printf "Connection established; attempting to ping\n")
-
-(send '(ping "asdf") nout) (flush-output nout)
-(define response (read-line nin))
-(when (not (equal? response "\"pong asdf\""))
-  (error (format "response was ~s" response)))
-(printf "Successfully established connection\n")
+(define-values (listen-in listen-out) (tcp-connect "localhost" listener-port))
+(file-stream-buffer-mode listen-out 'line)
 
 (define (interp x) (with-input-from-string x (thunk (read))))
 
-(printf "entering direct user-server REPL\n")
+(printf "Connection established; entering direct user-server REPL\n")
 (define (repl)
   (define evt (sync (wrap-evt (read-line-evt (current-input-port) 'any)
                               (curry cons 'user))
-                    (wrap-evt (read-line-evt nin 'any) (curry cons 'server))))
+                    (wrap-evt (read-line-evt listen-in 'any) (curry cons 'server))))
   (match evt
     [(cons _ (? eof-object?)) (printf "EOF encountered. Exiting.\n")]
-    [(cons 'user msg) (fprintf nout "~a\n" msg) (repl)]
-    [(cons 'server msg) (display (interp msg)) (newline) (repl)]))
+    [(cons 'user msg) (fprintf listen-out "~a\n" msg) (repl)]
+    [(cons 'server msg)
+      (match (interp msg)
+        [`(broadcast ,msg) (printf "* ~a\n" msg)]
+        [`(message ,msg) (printf "? ~a\n" msg)]
+        [`(raw ,msg) (display msg)]
+        [`(say ,name ,msg) (printf "~a: ~a\n" name msg)]
+        [x (printf "ERROR: unknown command from server: ~a\n" x)])
+      (repl)]))
 (repl)

@@ -1,7 +1,7 @@
 ;; various useful constant values
 #lang racket
 
-(provide item-prices dev-cards items commands resources
+(provide item-prices dev-cards items commands resources responses
          col-esc
          board-cell-list cell-labels board-edge-list board-vertex-list)
 
@@ -28,6 +28,9 @@
 ;; list of valid commands to the server
 ;; TODO: add info, help, respond, say; remove show
 (define commands '(buy use bank end ping show))
+
+;; list of valid response types (from the server to the client)
+(define responses '(broadcast message raw say))
 
 ;; ANSI terminal color code escape character
 (define col-esc (integer->char #x1b))

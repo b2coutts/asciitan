@@ -6,7 +6,7 @@
 (define MAX-USERS 4)
 
 (define st #f) ;; global state variable (initial value is a place holder)
-(define mutex (make-semaphore 1)) ;; mutex for st
+(define mutex (make-semaphore 0)) ;; mutex for st
 
 (define-syntax-rule (send msg out) (fprintf out "~s\n" msg))
 
@@ -41,8 +41,8 @@
     (logf 'debug "listener responding with ~s\n" response)
     (unless (void? response)
       (call-with-semaphore (third (user-io usr))
-        (thunk (send response out)))
-    (loop))))
+        (thunk (send response out))))
+    (loop)))
 
 ;; dispatch listeners, generate the initial state
 ;; TODO: close initial tcp connection after establishing listener?
@@ -106,13 +106,17 @@
 
 ;; TODO: allow the clients to choose their initial settlements/roads
 (logf 'debug "beginning initial settlement/road placement\n")
-(call-with-semaphore mutex (thunk
+((thunk
   (define (vtx a b c d e f) (list (cons a b) (cons c d) (cons e f)))
   (define (edg a b c d) (cons (cons a b) (cons c d)))
 
   (define (f usr vtx) (set-board-vertex-pair! (state-board st) vtx usr 'settlement))
   (define (g usr edge) (set-board-road-owner! (state-board st) edge usr))
+  (void)
 
+  (g (first (state-users st)) (edg 0 0 0 2))
+
+#|
   (match-define (list ron dan bob) (state-users st))
 
   (f ron (vtx -2 2 -1 1 -1 3))
@@ -128,10 +132,14 @@
   (f bob (vtx 1 -3 1 -1 2 -2))
   (g bob (edg 1 -1 2 -2))
   (f bob (vtx -2 -2 -2 0 -1 -1))
-  (g bob (edg -1 -3 -1 -1))))
+  (g bob (edg -1 -3 -1 -1))
+|#
+))
 
-(printf "Initial state:\n")
-(display (state->string st))
+(semaphore-post mutex)
+
+;(printf "Initial state:\n")
+;(display (state->string st))
 
 (logf 'debug "entering loop\n")
 (define (loop)
