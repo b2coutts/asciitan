@@ -86,5 +86,7 @@
 (handle-action! st dan '(end))
 (handle-action! st ron '(end))
 (handle-action! st dan '(end))
+(act! ron `(buy road ,(edg 0 2 1 1)))
+(act! ron `(buy road ,(edg -2 -2 -1 -1)))
 
 (display (state->string st))

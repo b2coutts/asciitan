@@ -7,7 +7,7 @@
 
 ;; -------------------------- SMALL HELPER FUNCTIONS --------------------------
 ;; broadcast a server message to everyone
-;; TODO: remove * before message
+;; TODO: remove SERVER
 (define/contract (broadcast st fstr . args)
   (->* (state? string?) #:rest (listof any/c) void?)
   (map (lambda (usr)
@@ -106,6 +106,7 @@
                             [(cons (== usr) 'settlement) (list res)]
                             [_ #f]))
                       (adj-vertices cell)))))))))
+    ;; TODO: better broadcast message
     (broadcast st "~a gets ~a." (uname usr) (stock->string stock-gain))
     (give-stock! usr stock-gain))
    (state-users st))
@@ -126,7 +127,27 @@
 
   (and (andmap (lambda (v) (not (board-vertex-pair b v))) nbrs)
        (ormap (lambda (e) (equal? (board-road-owner b e) usr)) edgs)))
-       
+
+;; given a user and an edge, #t iff the user is allowed to build a road there
+(define/contract (can-road? b usr edg)
+  (-> board? user? edge? boolean?)
+  (match-define (cons x y) edg)
+
+  ;; list of the 4 surrounding cells
+  (define surr (append (list x y)
+    (filter (lambda (cell) (or (member? (list cell x y) board-vertex-list)
+                               (member? (list x cell y) board-vertex-list)
+                               (member? (list x y cell) board-vertex-list)))
+            board-cell-list)))
+
+  ;; list of the 4 adjacent edges to edg
+  (define edgs
+    (filter (lambda (e) (= 2 (length (filter (curryr member? surr)
+                                             (list (car e) (cdr e))))))
+            board-edge-list))
+
+  (and (not (board-road-owner b edg))
+       (ormap (lambda (e) (equal? (board-road-owner b e) usr)) edgs)))
 
 ;; TODO: handle endgame conditions
 ;; TODO: handle roll #7
@@ -155,8 +176,8 @@
     [(not (can-afford? usr item)) (format "You can't afford ~a!" item)]
     [(and (building? item) (not (can-build? b usr args)))
       "You can't build a building there!"]
-    [(and (equal? item 'road) (board-road-owner b args))
-      "That space is already occupied!"]
+    [(and (equal? item 'road) (not (can-road? b usr args)))
+      "You can't build a road there!"]
     [(and (equal? item 'dev-card) (empty? (state-cards st)))
       "There are no more dev cards left to draw!"]
     [else (hash-map (hash-ref item-prices item) (lambda (res amt)
