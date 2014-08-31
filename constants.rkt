@@ -1,8 +1,11 @@
 ;; various useful constant values
 #lang racket
 
-(provide item-prices dev-cards items commands resources responses showables
+(provide item-prices dev-cards items commands icommands resources responses
+         showables
+
          col-esc
+
          board-cell-list cell-labels board-edge-list board-vertex-list)
 
 ;; list of resources
@@ -28,7 +31,10 @@
 
 ;; list of valid commands to the server
 ;; TODO: add info, help, respond, say; remove show
-(define commands '(buy use bank end ping show))
+(define commands '(buy use bank end show))
+
+;; list of commands which a player can use when it is not their turn
+(define icommands '(show))
 
 ;; list of showable things (i.e., valid arguments to show)
 (define showables '(board resources users dev-cards all))

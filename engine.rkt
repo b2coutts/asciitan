@@ -179,7 +179,6 @@
   (-> state? user? item? (or/c vertex? edge? void?) (or/c response? void?))
   (define b (state-board st))
   (cond
-    [(not (equal? usr (state-turnu st))) (list 'message "It's not your turn!")]
     [(not (can-afford? usr (hash-ref item-prices item)))
       (list 'message (format "You can't afford ~a!" item))]
     [(and (building? item) (not (can-build? b usr args)))
@@ -258,16 +257,20 @@
 (define/contract (handle-action! st usr act)
   (-> (or/c state? #f) user? any/c (or/c response? void?))
   (logf 'debug "handle-action!: usr=~a, act=~s\n" (user-name usr) act)
-  (match act
-    [`(buy dev-card) (buy-item! st usr 'dev-card (void))]
-    [`(buy ,item ,args) (buy-item! st usr item args)]
-    [`(use ,card-num) (use-card! st usr card-num)] ;; TODO: use card name instead?
-    [`(bank ,res-list ,target) (bank! st usr res-list target)]
-    [`(end) (change-turn! st)]
-    [`(show ,(or 'board 'all)) (list 'raw (show st usr (second act)))]
-    [`(show ,thing) (list 'message (show st usr thing))]
-    [`(say ,msg) (void (map (curry say st usr msg) (state-users st)))]
-    [_ (list 'message (format "Invalid command: ~s" act))]))
+  (if (and (not (equal? usr (state-turnu st)))
+           (cons? act)
+           (not (member? (car act) icommands)))
+      (list 'message "It is not your turn.")
+      (match act
+        [`(buy dev-card) (buy-item! st usr 'dev-card (void))]
+        [`(buy ,item ,args) (buy-item! st usr item args)]
+        [`(use ,card-num) (use-card! st usr card-num)] ;; TODO: name instead
+        [`(bank ,res-list ,target) (bank! st usr res-list target)]
+        [`(end) (change-turn! st)]
+        [`(show ,(or 'board 'all)) (list 'raw (show st usr (second act)))]
+        [`(show ,thing) (list 'message (show st usr thing))]
+        [`(say ,msg) (void (map (curry say st usr msg) (state-users st)))]
+        [_ (list 'message (format "Invalid command: ~s" act))])))
 
 ;; creates a new state, given a non-empty list of users
 (define/contract (init-state usrs)
