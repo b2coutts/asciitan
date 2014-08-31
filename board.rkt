@@ -1,7 +1,7 @@
 #lang racket
 
-(require racket/contract "data.rkt" "constants.rkt" "util.rkt" "cell.rkt"
-         "board-template.rkt")
+(require racket/contract "data.rkt" "constants.rkt" "basic.rkt" "cell.rkt"
+         "board-template.rkt" "adv.rkt")
 
 (provide
   create-board

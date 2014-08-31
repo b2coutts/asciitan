@@ -3,7 +3,7 @@
 
 (provide item-prices dev-cards items commands resources
          col-esc
-         board-cell-list board-edge-list board-vertex-list)
+         board-cell-list cell-labels board-edge-list board-vertex-list)
 
 ;; list of resources
 (define resources '(wood grain sheep ore clay))
@@ -38,6 +38,10 @@
   (-2 . -2) (-2 . 0) (-2 . 2) (-1 . -3) (-1 . -1) (-1 . 1) (-1 . 3) (0 . -4)
   (0 . -2) (0 . 0) (0 . 2) (0 . 4) (1 . -3) (1 . -1) (1 . 1) (1 . 3) (2 . -2)
   (2 . 0) (2 . 2)))
+
+;; association list bijecting cells with labels
+(define cell-labels
+  (map cons '(A B C D E F G H I J K L M N O P Q R S) board-cell-list))
 
 ;; normalized list of every edge on the board
 (define board-edge-list '(

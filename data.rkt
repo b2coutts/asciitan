@@ -1,7 +1,7 @@
 ;; various data type declarations
 #lang racket
 
-(require "util.rkt" "cell.rkt" "constants.rkt")
+(require "basic.rkt" "cell.rkt" "constants.rkt")
 
 (provide
   (struct-out board)

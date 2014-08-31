@@ -1,7 +1,7 @@
 ;; contains code for running the game
 #lang racket
 
-(require "board.rkt" "cell.rkt" "util.rkt" "data.rkt" "constants.rkt")
+(require "board.rkt" "cell.rkt" "basic.rkt" "data.rkt" "constants.rkt" "adv.rkt")
 
 (provide
   ;; TODO: remove these 2?

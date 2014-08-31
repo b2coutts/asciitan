@@ -1,9 +1,10 @@
-;; contains miscellaneous helper functions that don't belong anywhere
+;; contains miscellaneous helper functions that do not fundamentally have
+;; anything to do with this project
 #lang racket
 
 (require racket/contract)
 
-(provide member? prompt in notin resource->color style->string logf)
+(provide member? prompt in notin logf)
 
 ;; true iff x is an element of lst
 (define/contract (member? x lst)
@@ -33,23 +34,6 @@
     [err (when (string? err) (fprintf "~a\n" err))
          (prompt msg validate in out)]
     [else input]))
-
-;; produce the color code of the given resource
-(define/contract (resource->color res)
-  (-> symbol? integer?)
-  (match res ['sheep 92]
-             ['clay 31]
-             ['grain 33]
-             ['wood 32]
-             ['ore 90]
-             ['desert 37]))
-
-;; given a style, produce the ANSI escape string for inducing that style
-(define/contract (style->string sty)
-  (-> (list/c integer? integer? boolean? boolean?) string?)
-  (match-define (list bg fg bold underline) sty)
-  (format "~a[~a;~a~a~am" (integer->char #x1b) bg fg (if bold ";1" "")
-                          (if underline ";4" ""))) 
 
 ;; logging function
 ;; TODO: timestamp

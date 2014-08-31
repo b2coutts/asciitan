@@ -2,7 +2,7 @@
 #lang racket
 
 (require "data.rkt" "constants.rkt" "board.rkt" "cell.rkt" "engine.rkt"
-         "util.rkt")
+         "basic.rkt")
 
 ;; TODO: move some of these into existing modules?
 ;; ----------------------------- UTILITY FUNCTIONS -----------------------------
