@@ -71,8 +71,15 @@
       [`(str ,str) (with-style sty '(40 37 #f #f) str)]
       [`(sty ,nsty ,char) (with-style sty nsty (~a char))]
       [`(rep ,amt ,code)
-        (match-define (cons rst newcol) (fill-template b (list code) sty))
+        (match-define (cons rst newsty) (fill-template b (list code) sty))
         (replicate amt rst)]
+      [`(label ,x ,y)
+        (string-append
+          (with-style sty '(40 37 #t #f)
+            (format "~a   " (cell->label (cons x y))))
+          (if (equal? (board-thief b) (cons x y))
+              (with-style sty '(40 31 #f #f) "T")
+              " "))]
       [`(thief ,x ,y)
         (with-style sty '(40 31 #f #f)
           (if (equal? (board-thief b) (cons x y)) "T" " "))]
@@ -106,8 +113,8 @@
           [(cons usr bldg) (with-style sty `(40 ,(user-color usr) #f #f)
                                        (bldg->str bldg))]))
         (string-append s1 s2 s3)]))
-      (match-define (cons rst newcol) (fill-template b (rest tp) sty))
-      (cons (string-append str rst) newcol)]))
+      (match-define (cons rst newsty) (fill-template b (rest tp) sty))
+      (cons (string-append str rst) newsty)]))
 
 ;; -------------------------- CONSTRUCTING FUNCTIONS --------------------------
 ;; construct a new random board
