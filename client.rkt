@@ -46,7 +46,7 @@
         [`("buy" "dev-card") `(buy dev-card)]
         [`("buy" "road" ,edg) (cond
           [(not (string->edge edg))
-            (printf "! invalid edge: ~a\n")]
+            (printf "! invalid edge: ~a\n" edg)]
           [else `(buy road ,(string->edge edg))])]
         [`("buy" ,item ,vtx) (cond
           [(not (building? (string->symbol item)))
