@@ -114,8 +114,11 @@
   (define (g usr edge) (set-board-road-owner! (state-board st) edge usr))
   (void)
 
-  ;; (g (first (state-users st)) (edg 0 0 0 2))
+  (g (first (state-users st)) (edg 0 0 0 2))
+  (g (first (state-users st)) (edg -3 -3 -2 -2))
 
+
+  #|
   (match-define (list ron dan bob) (state-users st))
 
   (f ron (vtx -2 2 -1 1 -1 3))
@@ -132,6 +135,7 @@
   (g bob (edg 1 -1 2 -2))
   (f bob (vtx -2 -2 -2 0 -1 -1))
   (g bob (edg -2 -2 -1 -1))
+  |#
 ))
 
 (semaphore-post mutex)

@@ -138,7 +138,7 @@
     (filter (lambda (cell) (or (member? (list cell x y) board-vertex-list)
                                (member? (list x cell y) board-vertex-list)
                                (member? (list x y cell) board-vertex-list)))
-            board-cell-list)))
+            (append (adj-cells x) (adj-cells y)))))
 
   ;; list of the 4 adjacent edges to edg
   (define edgs

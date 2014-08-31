@@ -141,7 +141,7 @@ o \   g   /L    \   g   /M    \   w   / c | * ron builds a road at OS
                 \   w   /                 | * bob banks 4 clay for a wheat    
                  \_____/                  | * bob builds a dev-card           
                   ?????                   | bob: more like bobs mcgee         
-Players: ron, dan, bob, lou
+--------------------------------------------------------------------------------
 > prompt
 
 How to identify edges and vertices:
