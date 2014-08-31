@@ -172,8 +172,9 @@
   (-> state? user? item? (or/c vertex? edge? void?) (or/c response? void?))
   (define b (state-board st))
   (cond
-    [(not (equal? usr (state-turnu st))) "It's not your turn!"]
-    [(not (can-afford? usr item)) (format "You can't afford ~a!" item)]
+    [(not (equal? usr (state-turnu st))) (list 'message "It's not your turn!")]
+    [(not (can-afford? usr item))
+      (list 'message (format "You can't afford ~a!" item))]
     [(and (building? item) (not (can-build? b usr args)))
       (list 'message "You can't build a building there!")]
     [(and (equal? item 'road) (not (can-road? b usr args)))
@@ -208,6 +209,13 @@
   (-> state? user? (listof resource?) resource? (or/c response? void?))
   (void))
 
+;; say a message to a user
+(define/contract (say st sender msg usr)
+  (-> state? user? string? user? void?)
+  (match-define (list _ out mutex) (user-io usr))
+  (call-with-semaphore mutex (thunk
+    (fprintf out "~s\n" (list 'say (uname sender) msg)))))
+
 ;; ------------------------------- API FUNCTIONS -------------------------------
 ;; handle a request from the user
 ;; TODO: replace any/c (3rd arg to ->) with (cons/c command? list?)
@@ -223,6 +231,7 @@
     [`(show resources)
       (list 'message (format "You have ~a." (stock->string (user-res usr))))]
     [`(ping ,str) (list 'message (format "pong ~a" str))]
+    [`(say ,msg) (void (map (curry say st usr msg) (state-users st)))]
     [_ (list 'message (format "Invalid command: ~s" act))]))
 
 ;; creates a new state, given a non-empty list of users
