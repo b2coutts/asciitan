@@ -72,6 +72,8 @@
         [`("show" ,thing) (cond
           [(showable? (string->symbol thing)) `(show ,(string->symbol thing))]
           [else (printf "! invalid thing to show: ~a\n" thing)])]
+        ;; TODO: remove this testing command
+        [(cons "raw" _) (interp (substring msg 4))]
         [(cons "say" _) `(say ,(if (< (string-length msg) 4)
                                    "" (substring msg 4)))]
         [(cons cmd args) (cond

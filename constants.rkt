@@ -34,13 +34,16 @@
 (define commands '(buy use bank end show respond))
 
 ;; list of commands which a player can use when it is not their turn
-(define icommands '(show say))
+(define icommands '(show say respond))
 
 ;; list of showable things (i.e., valid arguments to show)
 (define showables '(board resources users dev-cards all))
 
 ;; list of valid response types (from the server to the client)
-(define responses '(broadcast message raw say))
+(define responses '(broadcast message raw say prompt))
+
+;; list of requests with which the user can be prompted
+(define prompts '(move-thief discard-resources pick-target))
 
 ;; ANSI terminal color code escape character
 (define col-esc (integer->char #x1b))

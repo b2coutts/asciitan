@@ -13,8 +13,8 @@
 ;; produce a stock of empty resources for a user
 (define/contract (empty-stock)
   (-> stock?)
-  ;; TODO: change from 5 to 0
-  (make-hash (map (lambda (res) (cons res 5)) '(wood grain sheep ore clay))))
+  ;; TODO: change from 2 to 0
+  (make-hash (map (lambda (res) (cons res 2)) '(wood grain sheep ore clay))))
 
 ;; begins interacting with a given user on the given input/output ports
 ;; TODO: code for ending

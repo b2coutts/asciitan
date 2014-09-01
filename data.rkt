@@ -54,7 +54,9 @@
 ) #:mutable #:transparent)
 
 (define-struct/contract rlock (
-  [holder user?] ;; user being waited for
+  [holder user?]    ;; user being waited for
+  [action string?]  ;; description of what action is being waited for
+  [var any/c]       ;; allows rlock to have some situation-dependent state
   ;; lock function; takes the state (any/c because state? isn't defined yet)
   ;; and a response, and produces a server response for the user. If the user's
   ;; response is valid, func will unlock the state itself

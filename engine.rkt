@@ -39,6 +39,11 @@
   (map (lambda (res) (hash-set! stock res (+ (hash-ref stock res 0) 1))) lst)
   stock)
 
+;; convert a stock into a list of resources
+(define/contract (stock->list stock)
+  (-> stock? (listof resource?))
+  (apply append (hash-map stock (lambda (res amt) (make-list amt res)))))
+
 ;; convert a stock to a pretty-printed string
 (define/contract (stock->string stock)
   (-> stock? string?)
@@ -151,10 +156,35 @@
   (and (not (board-road-owner b edg))
        (ormap (lambda (e) (equal? (board-road-owner b e) usr)) edgs)))
 
+;; third argument is the index of a user (in state-users). attempts to remove
+;; resources from this user (if they have >7); failing that, moves on to the
+;; next user until the last user has been reached. Finally, prompts the first
+;; user to move the thief.
+(define/contract (thief-cut! st usri)
+  (-> state? integer? void?)
+  (cond
+    ;; allow the user to place the thief
+    [(>= usri (length (state-users st)))
+      (set-state-lock! st (rlock (state-turnu st) "move the thief" #f
+                                 prompt-move-thief!))
+      (send-message (state-turnu st)
+        `(prompt move-thief "Where will you move the thief?"))]
+    [else
+      (define usr (list-ref (state-users st) usri))
+      (define numres (length (stock->list (user-res usr))))
+      (cond
+        [(< numres 8) (thief-cut! st (add1 usri))]
+        [else (set-state-lock! st (rlock usr "discard resources" usri
+                                         prompt-discard!))
+              (broadcast st "~a has ~a resources!" (uname usr) numres)
+              (send-message usr `(prompt discard-resources
+                ,(format "Select ~a resources to discard."
+                         (quotient numres 2))))])]))
+
 ;; TODO: handle endgame conditions
 ;; TODO: handle roll #7
 (define/contract (change-turn! st)
-  (-> state? void?)
+  (-> state? (or/c response? void?))
   (define winner (game-over? st))
   (cond
     ;; TODO: send some sort of endgame signal
@@ -167,7 +197,9 @@
       (broadcast st "It's ~a's turn." (uname (state-turnu st)))
       (define roll (random-roll))
       (broadcast st "~a rolls a ~a." (uname (state-turnu st)) roll)
-      (apply-roll! st roll)]))
+      (cond
+        [(= roll 7) (thief-cut! st 0)]
+        [else (apply-roll! st roll)])]))
 
 ;; spends a given stock of the user's resources
 (define/contract (spend-stock! usr stock)
@@ -176,7 +208,75 @@
     (hash-set! (user-res usr) res (- (hash-ref (user-res usr) res) amt))))
   (void))
 
-;; -------------------------- MAJOR HELPER FUNCTIONS --------------------------
+;; have usr1 steal a random resource from usr2
+(define/contract (steal-resource! st usr1 usr2)
+  (-> state? user? user? void?)
+  (define reslist (shuffle (stock->list (user-res usr2))))
+  (define res (match reslist
+    ['() 'nothing]
+    [(cons x _) x]))
+  (unless (equal? res 'nothing)
+    (give-res! usr2 res -1)
+    (give-res! usr1 res))
+  (broadcast st "~a stole ~a from ~a." (uname usr1)
+    (if (equal? res 'nothing) "nothing"
+        (format "~a1 ~a~a" (style->string `(,(resource->color res) 40 #f #f))
+                           res (style->string '(37 40 #f #f))))
+    (uname usr2)))
+
+;; ------------------------- PROMPT HANDLING FUNCTIONS -------------------------
+;; discard resources due to thief, move on to next user
+(define/contract (prompt-discard! st rlist)
+  (-> state? (listof resource?) (or/c response? void?))
+  (define stock (list->stock rlist))
+  (match-define (rlock usr _ usri _) (state-lock st))
+  (define needed (quotient (length (stock->list (user-res usr))) 2))
+  (cond
+    [(not (= (length rlist) needed))
+      (list 'message (format "You must discard ~a resources!" needed))]
+    [(can-afford? usr stock)
+      (spend-stock! usr stock)
+      (set-state-lock! st #f)
+      (broadcast st "~a discarded ~a." (uname usr) (stock->string stock))
+      (thief-cut! st (add1 usri))]
+    [else (list 'message (format "You don't have ~a to discard!"
+                                 (stock->string stock)))]))
+
+;; move the thief
+(define/contract (prompt-move-thief! st cell)
+  (-> state? cell-valid? (or/c response? void?))
+  (define usr (rlock-holder (state-lock st)))
+  (cond
+    [(equal? cell (board-thief (state-board st)))
+      (list 'message "You can't move the thief to where it already is!")]
+    [else (set-board-thief! (state-board st) cell)
+          (broadcast st "~a moved the thief to ~a." (uname usr)
+                                                    (cell->label cell))
+          (define usrs (remove-duplicates (filter-map
+            (lambda (vtx) (match (board-vertex-pair (state-board st) vtx)
+              [(cons u _) u]
+              [#f #f]))
+            (adj-vertices cell))))
+          (match usrs
+            ['() (set-state-lock! st #f)]
+            [(list usr2) (set-state-lock! st #f) (steal-resource! st usr usr2)]
+            [_ (set-state-lock! st (rlock usr "pick a target" usrs
+                                          prompt-target!))
+               `(prompt pick-target ,(format "Will you steal from ~a?"
+                (add-between (map uname usrs) ", " #:before-last ", or ")))])]))
+
+;; choose a target for the thief
+(define/contract (prompt-target! st usr)
+  (-> state? user? (or/c void? response?))
+  (define holdr (rlock-holder (state-lock st)))
+  (define usrs (rlock-var (state-lock st)))
+  (cond
+    [(not (member? usr usrs))
+      (list 'message "You must steal from ~a!"
+        (add-between (map uname usrs) ", " #:before-last ", or "))]
+    [else (set-state-lock! st #f) (steal-resource! st holdr usr)]))
+
+;; -------------------------- MAJOR HELPER FUNCTIONS ---------------------------
 (define/contract (buy-item! st usr item args)
   (-> state? user? item? (or/c vertex? edge? void?) (or/c response? void?))
   (define b (state-board st))
@@ -257,11 +357,10 @@
       (list 'message "It is not your turn.")]
     [(and (state-lock st)
           (cons? act)
-          (or (not (member? (car act) (cons 'respond icommands)))
-              (and (not (member? (car act) icommands))
-                   (not (equal? usr (rlock-holder (state-lock st)))))))
-      (list 'message (format "Can't act; waiting for ~a to respond."
-                             (uname (rlock-holder (state-lock st)))))]
+          (not (member? (car act) icommands)))
+      (list 'message (format "Waiting for ~a to ~a."
+                             (uname (rlock-holder (state-lock st)))
+                             (rlock-action (state-lock st))))]
     [else
       (match act
         [`(buy dev-card) (buy-item! st usr 'dev-card (void))]
@@ -274,8 +373,8 @@
         [`(say ,msg) (void (map (curryr send-message `(say ,(uname usr) ,msg))
                                 (state-users st)))]
         [`(respond ,response) (match (state-lock st)
-          [(rlock (== usr) fn) (fn st response)]
-          [(rlock _ _) (list 'message "rlock is not waiting for you!")]
+          [(rlock (== usr) _ _ fn) (fn st response)]
+          [(rlock _ _ _ _) (list 'message "rlock is not waiting for you!")]
           [#f (list 'message "rlock is not waiting!")])]
         [_ (list 'message (format "Invalid command: ~s" act))])]))
 
