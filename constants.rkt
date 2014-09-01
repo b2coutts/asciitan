@@ -34,7 +34,7 @@
 (define commands '(buy use bank end show respond))
 
 ;; list of commands which a player can use when it is not their turn
-(define icommands '(show))
+(define icommands '(show say))
 
 ;; list of showable things (i.e., valid arguments to show)
 (define showables '(board resources users dev-cards all))
