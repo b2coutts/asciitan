@@ -250,31 +250,37 @@
     [(equal? cell (board-thief (state-board st)))
       (list 'message "You can't move the thief to where it already is!")]
     [else (set-board-thief! (state-board st) cell)
-          (broadcast st "~a moved the thief to ~a." (uname usr)
-                                                    (cell->label cell))
-          (define usrs (remove-duplicates (filter-map
+          (broadcast st "~a moved the thief to ~a~a~a." (uname usr)
+            (style->string '(37 40 #t #f)) (cell->label cell)
+            (style->string '(37 40 #f #f)))
+          (define usrs (remove usr (remove-duplicates (filter-map
             (lambda (vtx) (match (board-vertex-pair (state-board st) vtx)
               [(cons u _) u]
               [#f #f]))
-            (adj-vertices cell))))
+            (adj-vertices cell)))))
           (match usrs
             ['() (set-state-lock! st #f)]
             [(list usr2) (set-state-lock! st #f) (steal-resource! st usr usr2)]
             [_ (set-state-lock! st (rlock usr "pick a target" usrs
                                           prompt-target!))
                `(prompt pick-target ,(format "Will you steal from ~a?"
-                (add-between (map uname usrs) ", " #:before-last ", or ")))])]))
+                (apply string-append (add-between (map uname usrs) ", "
+                                                  #:before-last ", or "))))])]))
 
 ;; choose a target for the thief
-(define/contract (prompt-target! st usr)
-  (-> state? user? (or/c void? response?))
-  (define holdr (rlock-holder (state-lock st)))
-  (define usrs (rlock-var (state-lock st)))
-  (cond
-    [(not (member? usr usrs))
-      (list 'message "You must steal from ~a!"
-        (add-between (map uname usrs) ", " #:before-last ", or "))]
-    [else (set-state-lock! st #f) (steal-resource! st holdr usr)]))
+(define/contract (prompt-target! st usrname)
+  (-> state? string? (or/c void? response?))
+  (match (filter (lambda (usr) (equal? (user-name usr) usrname))
+                 (state-users st))
+    ['() (list 'message "~a is not a player in this game!")]
+    [(list usr)
+      (define holdr (rlock-holder (state-lock st)))
+      (define usrs (rlock-var (state-lock st)))
+      (cond
+        [(not (member? usr usrs))
+          (list 'message "You must steal from ~a!"
+            (add-between (map uname usrs) ", " #:before-last ", or "))]
+        [else (set-state-lock! st #f) (steal-resource! st holdr usr)])]))
 
 ;; -------------------------- MAJOR HELPER FUNCTIONS ---------------------------
 (define/contract (buy-item! st usr item args)
