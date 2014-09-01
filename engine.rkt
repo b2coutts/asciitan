@@ -90,7 +90,7 @@
   (-> user? string?)
   (format "~a[~am~a~a[37m" col-esc (user-color usr) (user-name usr) col-esc))
 
-;; given a roll number, modify the game state to add resources
+;; given a roll number, give players their earned resources
 (define/contract (apply-roll! st roll)
   (-> state? roll-num? void?)
   (define b (state-board st))
@@ -106,7 +106,6 @@
                             [(cons (== usr) 'settlement) (list res)]
                             [_ #f]))
                       (adj-vertices cell)))))))))
-    ;; TODO: better broadcast message
     (broadcast st "~a gets ~a." (uname usr) (stock->string stock-gain))
     (give-stock! usr stock-gain))
    (state-users st))
