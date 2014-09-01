@@ -41,7 +41,7 @@
 (define dan (user "dan" '() (no-res) 96
   (list (current-input-port) (open-output-file "/dev/null" #:exists 'truncate)
         (make-semaphore 1))))
-(define st (state (list ron dan) ron (create-board) (shuffle dev-cards)))
+(define st (state (list ron dan) ron (create-board) (shuffle dev-cards) #f))
 (define b (state-board st))
 
 (define (vtx a b c d e f) (list (cons a b) (cons c d) (cons e f)))
