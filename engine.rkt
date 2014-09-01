@@ -6,14 +6,17 @@
 (provide init-state handle-action!)
 
 ;; -------------------------- SMALL HELPER FUNCTIONS --------------------------
+;; sends a message to a user
+(define/contract (send-message usr msg)
+  (-> user? response? void?)
+  (match-define (list _ out mutex) (user-io usr))
+  (call-with-semaphore mutex (thunk (fprintf out "~s\n" msg)))
+  (void))
+
 ;; broadcast a server message to everyone
 (define/contract (broadcast st fstr . args)
   (->* (state? string?) #:rest (listof any/c) void?)
-  (map (lambda (usr)
-        (match-define (list _ out mutex) (user-io usr))
-        (define str (apply (curry format fstr) args))
-        (call-with-semaphore mutex (thunk
-          (fprintf out "~s\n" (list 'broadcast str)))))
+  (map (curryr send-message (list 'broadcast (apply (curry format fstr) args)))
        (state-users st))
   (void))
 
@@ -221,14 +224,6 @@
                  (stock->string cost) col-esc (resource->color target)
                  target (style->string '(40 37 #f #f)))]))
 
-
-;; say a message to a user
-(define/contract (say st sender msg usr)
-  (-> state? user? string? user? void?)
-  (match-define (list _ out mutex) (user-io usr))
-  (call-with-semaphore mutex (thunk
-    (fprintf out "~s\n" (list 'say (uname sender) msg)))))
-
 ;; produce a string of info about a thing
 (define/contract (show st usr thing)
   (-> state? user? showable? string?)
@@ -276,7 +271,8 @@
         [`(end) (change-turn! st)]
         [`(show ,(or 'board 'all)) (list 'raw (show st usr (second act)))]
         [`(show ,thing) (list 'message (show st usr thing))]
-        [`(say ,msg) (void (map (curry say st usr msg) (state-users st)))]
+        [`(say ,msg) (void (map (curryr send-message `(say ,(uname usr) ,msg))
+                                (state-users st)))]
         [`(respond ,response) (match (state-lock st)
           [(rlock (== usr) fn) (fn st response)]
           [(rlock _ _) (list 'message "rlock is not waiting for you!")]
