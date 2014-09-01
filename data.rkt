@@ -6,6 +6,7 @@
 (provide
   (struct-out board)
   (struct-out user)
+  (struct-out rlock)
   (struct-out state)
 
   resource?
@@ -52,9 +53,18 @@
   [thief cell?]
 ) #:mutable #:transparent)
 
+(define-struct/contract rlock (
+  [holder user?] ;; user being waited for
+  ;; lock function; takes the state (any/c because state? isn't defined yet)
+  ;; and a response, and produces a server response for the user. If the user's
+  ;; response is valid, func will unlock the state itself
+  [func (-> any/c any/c (or/c response? void?))]
+) #:mutable #:transparent)
+
 (define-struct/contract state (
   [users (listof user?)]      ;; list of the users in the game
   [turnu user?]               ;; user whose turn it is
   [board board?]              ;; the game board
   [cards (listof dev-card?)]  ;; the stack of dev cards
+  [lock (or/c rlock? #f)]     ;; lock used to wait for a user response
 ) #:mutable #:transparent)

@@ -250,17 +250,25 @@
       (show st usr 'dev-cards) "\n"
       (show st usr 'users) "\n")]))
 
-
 ;; ------------------------------- API FUNCTIONS -------------------------------
 ;; handle a request from the user
 ;; TODO: replace any/c (3rd arg to ->) with (cons/c command? list?)
 (define/contract (handle-action! st usr act)
   (-> (or/c state? #f) user? any/c (or/c response? void?))
   (logf 'debug "handle-action!: usr=~a, act=~s\n" (user-name usr) act)
-  (if (and (not (equal? usr (state-turnu st)))
-           (cons? act)
-           (not (member? (car act) icommands)))
-      (list 'message "It is not your turn.")
+  (cond
+    [(and (not (equal? usr (state-turnu st)))
+          (cons? act)
+          (not (member? (car act) icommands)))
+      (list 'message "It is not your turn.")]
+    [(and (state-lock st)
+          (cons? act)
+          (or (not (member? (car act) (cons 'respond icommands)))
+              (and (not (member? (car act) icommands))
+                   (not (equal? usr (rlock-holder (state-lock st)))))))
+      (list 'message (format "Can't act; waiting for ~a to respond."
+                             (uname (rlock-holder (state-lock st)))))]
+    [else
       (match act
         [`(buy dev-card) (buy-item! st usr 'dev-card (void))]
         [`(buy ,item ,args) (buy-item! st usr item args)]
@@ -270,9 +278,13 @@
         [`(show ,(or 'board 'all)) (list 'raw (show st usr (second act)))]
         [`(show ,thing) (list 'message (show st usr thing))]
         [`(say ,msg) (void (map (curry say st usr msg) (state-users st)))]
-        [_ (list 'message (format "Invalid command: ~s" act))])))
+        [`(respond ,response) (match (state-lock st)
+          [(rlock (== usr) fn) (fn st response)]
+          [(rlock _ _) (list 'message "rlock is not waiting for you!")]
+          [#f (list 'message "rlock is not waiting!")])]
+        [_ (list 'message (format "Invalid command: ~s" act))])]))
 
 ;; creates a new state, given a non-empty list of users
 (define/contract (init-state usrs)
   (-> (listof user?) state?)
-  (state usrs (first usrs) (create-board) (shuffle dev-cards)))
+  (state usrs (first usrs) (create-board) (shuffle dev-cards) #f))
