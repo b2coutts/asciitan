@@ -36,15 +36,29 @@
           (cons (list->string x)
                 (parse (list->string (dropf xs (or/c #\tab #\space)))))]))
 
+;; TODO: keep a list of all usernames in the game to verify username inputs
+
 (printf "Connection established; entering direct user-server REPL\n")
 (define (repl)
   (define evt (sync (wrap-evt (read-line-evt (current-input-port) 'any)
                               (curry cons 'user))
-                    (wrap-evt (read-line-evt listen-in 'any) (curry cons 'server))))
+                    (wrap-evt (read-line-evt listen-in 'any)
+                              (curry cons 'server))))
   (match evt
     [(cons _ (? eof-object?)) (printf "EOF encountered. Exiting.\n")]
     [(cons 'user msg)
       (define req (match (parse msg)
+        ;; prompt responses
+        [`("move" ,cstr) (define cell (label->cell (string->symbol cstr)))
+          (cond [cell `(respond move-thief ,cell)]
+                [else (printf "! invalid cell: ~a\n" cell)])]
+        [(cons "discard" rlist)
+          (match (filter-not (compose resource? string->symbol) rlist)
+            [(cons str _) (printf "! invalid resource: ~a\n" str)]
+            [_ `(respond discard-resources ,(map string->symbol rlist))])]
+        ;; TODO: validate the username
+        [`("pick" ,usr) `(respond pick-target ,usr)]
+
         [`("buy" "dev-card") `(buy dev-card)]
         [`("buy" "road" ,edg) (cond
           [(not (string->edge edg))
@@ -77,6 +91,7 @@
         [(cons "say" _) `(say ,(if (< (string-length msg) 4)
                                    "" (substring msg 4)))]
         [(cons cmd args) (cond
+          ;; TODO: include "client-only" commends like move and pick here
           [(command? (string->symbol cmd))
             ;; TODO: show usage
             (printf "! invalid usage of ~a\n" cmd)]
@@ -91,6 +106,7 @@
         [`(message ,msg) (printf "? ~a\n" msg)]
         [`(raw ,msg) (display msg)]
         [`(say ,name ,msg) (printf "~a: ~a\n" name msg)]
+        [`(prompt ,type ,msg) (printf "> ~a\n" msg)]
         [x (printf "ERROR: unknown command from server: ~a\n" x)])
       (repl)]))
 (repl)

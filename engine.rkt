@@ -165,21 +165,22 @@
   (cond
     ;; allow the user to place the thief
     [(>= usri (length (state-users st)))
-      (set-state-lock! st (rlock (state-turnu st) "move the thief" #f
-                                 prompt-move-thief!))
+      (set-state-lock! st (rlock (state-turnu st) "move the thief" 'move-thief
+                                 #f prompt-move-thief!))
       (send-message (state-turnu st)
-        `(prompt move-thief "Where will you move the thief?"))]
+        `(prompt move-thief
+          "Where will you move the thief? Use the `move` command"))]
     [else
       (define usr (list-ref (state-users st) usri))
       (define numres (length (stock->list (user-res usr))))
       (cond
         [(< numres 8) (thief-cut! st (add1 usri))]
-        [else (set-state-lock! st (rlock usr "discard resources" usri
-                                         prompt-discard!))
+        [else (set-state-lock! st (rlock usr "discard resources"
+                                    'discard-resources usri prompt-discard!))
               (broadcast st "~a has ~a resources!" (uname usr) numres)
-              (send-message usr `(prompt discard-resources
-                ,(format "Select ~a resources to discard."
-                         (quotient numres 2))))])]))
+              (send-message usr `(prompt discard-resources ,(format
+                "Select ~a resources to discard. Use the `discard` command."
+                (quotient numres 2))))])]))
 
 ;; TODO: handle endgame conditions
 ;; TODO: handle roll #7
@@ -229,7 +230,7 @@
 (define/contract (prompt-discard! st rlist)
   (-> state? (listof resource?) (or/c response? void?))
   (define stock (list->stock rlist))
-  (match-define (rlock usr _ usri _) (state-lock st))
+  (match-define (rlock usr _ _ usri _) (state-lock st))
   (define needed (quotient (length (stock->list (user-res usr))) 2))
   (cond
     [(not (= (length rlist) needed))
@@ -261,7 +262,7 @@
           (match usrs
             ['() (set-state-lock! st #f)]
             [(list usr2) (set-state-lock! st #f) (steal-resource! st usr usr2)]
-            [_ (set-state-lock! st (rlock usr "pick a target" usrs
+            [_ (set-state-lock! st (rlock usr "pick a target" 'pick-target usrs
                                           prompt-target!))
                `(prompt pick-target ,(format "Will you steal from ~a?"
                 (apply string-append (add-between (map uname usrs) ", "
@@ -378,9 +379,9 @@
         [`(show ,thing) (list 'message (show st usr thing))]
         [`(say ,msg) (void (map (curryr send-message `(say ,(uname usr) ,msg))
                                 (state-users st)))]
-        [`(respond ,response) (match (state-lock st)
-          [(rlock (== usr) _ _ fn) (fn st response)]
-          [(rlock _ _ _ _) (list 'message "rlock is not waiting for you!")]
+        [`(respond ,type ,response) (match (state-lock st)
+          [(rlock (== usr) _ (== type) _ fn) (fn st response)]
+          [(rlock _ _ _ _ _) (list 'message "You can't do that right now.")]
           [#f (list 'message "rlock is not waiting!")])]
         [_ (list 'message (format "Invalid command: ~s" act))])]))
 

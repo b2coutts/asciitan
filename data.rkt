@@ -16,6 +16,7 @@
   item?
   command?
   showable?
+  prompt?
   style?
   stock?
   response?
@@ -28,6 +29,7 @@
 (define item?     (in items))
 (define command?  (in commands))
 (define showable? (in showables))
+(define prompt?   (in prompts))
 
 ;; represents the current ANSI terminal style; (bg fg bold underline)
 (define style? (list/c integer? integer? boolean? boolean?))
@@ -56,6 +58,7 @@
 (define-struct/contract rlock (
   [holder user?]    ;; user being waited for
   [action string?]  ;; description of what action is being waited for
+  [type prompt?]    ;; which kind of response is being waited for
   [var any/c]       ;; allows rlock to have some situation-dependent state
   ;; lock function; takes the state (any/c because state? isn't defined yet)
   ;; and a response, and produces a server response for the user. If the user's

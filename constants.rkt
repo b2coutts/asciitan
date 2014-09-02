@@ -2,7 +2,7 @@
 #lang racket
 
 (provide item-prices dev-cards items commands icommands resources responses
-         showables
+         showables prompts
 
          col-esc
 
