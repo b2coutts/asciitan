@@ -19,10 +19,10 @@
   [road . #hash([ore . 0] [grain . 0] [clay . 1] [wood . 1] [sheep . 0])]))
 
 ;; ordered list of all dev cards
-;; TODO: what about monopoly? double-check this list
 (define dev-cards
   (append (build-list 14 (const 'knight))
           (build-list 5  (const 'veep)) ;; TODO: separate these?
+          (build-list 2  (const 'monopoly))
           (build-list 2  (const 'year-of-plenty))
           (build-list 2  (const 'road-building))))
 
