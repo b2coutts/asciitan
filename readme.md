@@ -1,5 +1,6 @@
 asciitan is still under heavy development. In particular, the following things
 do not work:
+
     - Using development cards
     - Trading between users
     - More than 3 players
