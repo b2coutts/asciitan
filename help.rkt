@@ -20,7 +20,10 @@
 (define/contract (help-cmd cmd)
   (-> (listof symbol?) string?)
   (match cmd
+    ;; no arguments
     ['() general-help]
+    
+    ;; commands
     ['(buy road) (sa "Usage: buy road edge\n"
       "Build a road at edge. See `help edge` for info on how to input an "
       "edge.\n")]
@@ -31,7 +34,8 @@
       "Build a settlement at vertex. See `help vertex` for info on how to "
       "input a vertex.\n")]
     ['(buy dev-card) (sa "Usage: buy dev-card\n"
-      "Buy a development card.\n")]
+      "Buy a development card. Use `help card-name` for info on a specific "
+      "card\n")]
     [(cons 'buy _) (sa "Usage: buy item [place]\n"
       "Buy an item. item is one of road, city, settlement, dev-card. Type "
        "`help buy item` for item-specific info.\n")]
@@ -60,6 +64,7 @@
       "Displays info on how to use a command. If no command is specified, "
       "displays a list of commands.\n")]
 
+    ;; cell/edge/vertex format info
     [(cons 'cell _) (sa "To specify a cell, use the bold uppercase letter in its "
       "top-left corner on the map.\n")]
     [(cons 'edge _) (sa "An edge is specified with the format Z-n, where Z is an "
@@ -68,4 +73,18 @@
     [(cons 'vertex _) (sa "A vertex is specified with the format Z.n, where Z is an "
       "adjacent cell (see `help cell`), and n (in [1-6]) specifies its vertex "
       "as follows: the top-left vertex is 1, go clockwise from there.\n")]
+
+    ;; development card info
+    [`(knight) (sa "Development card: knight\n"
+      "Move the thief to a location of your choosing (`move` cell).\n")]
+    [`(veep) (sa "Development card: veep\n"
+      "Gain 1 victory point.\n")]
+    [`(monopoly) (sa "Development card: monopoly\n"
+      "Choose a resource. Every other player gives you all of that resource "
+      "that they have (`take resource`).\n")]
+    [`(year-of-plenty) (sa "Development card: year-of-plenty\n"
+      "Gain two resources of your choosing (`choose res1 res2`).\n")]
+    [`(road-building) (sa "Development card: road-building\n"
+      "Build two roads for free (`build edge1 edge2`)\n")]
+
     [(cons cmd _) (format "Unknown command: ~a\n" cmd)]))
