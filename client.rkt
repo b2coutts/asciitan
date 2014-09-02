@@ -74,11 +74,9 @@
           [(not (string->vertex vtx))
             (printf "! invalid vertex: ~a\n" vtx)]
           [else `(buy ,(string->symbol item) ,(string->vertex vtx))])]
-        [`("use" ,numstr)
-          (define num (string->number numstr))
-          (cond
-            [(and num (integer? num) (>= num 0)) `(use ,num)]
-            [else (printf "! invalid card number: ~a\n" numstr)])]
+        [`("use" ,card) (match (string->symbol card)
+          [(? dev-card? dc) `(use ,dc)]
+          [_ (printf "! not a dev card: ~a\n" card)])]
         [(cons "bank" (cons target lst))
           (define err (ormap (lambda (res) (cond
                               [(resource? (string->symbol res)) #f]

@@ -309,9 +309,19 @@
               (list 'message (format "You draw a ~a." draw))])]))
 
 ;; TODO
-(define/contract (use-card! st usr card-num)
-  (-> state? user? integer? (or/c response? void?))
-  (void))
+(define/contract (use-card! st usr card)
+  (-> state? user? dev-card? (or/c response? void?))
+  (cond
+    [(not (member? card (user-cards usr)))
+      (list 'message (format "You don't have a ~a!\n" card))]
+    [else
+      (set-user-cards! usr (remove card (user-cards usr)))
+      (match card
+        ['knight (set-state-lock! st (rlock (state-turnu st) "move the thief"
+                                            'move-thief #f prompt-move-thief!))
+          `(prompt move-thief
+            "Where will you move the thief? Use the `move` command")]
+            )]))
 
 ;; TODO: trading posts
 (define/contract (bank! st usr res-list target)
@@ -368,7 +378,7 @@
       (match act
         [`(buy dev-card) (buy-item! st usr 'dev-card (void))]
         [`(buy ,item ,args) (buy-item! st usr item args)]
-        [`(use ,card-num) (use-card! st usr card-num)] ;; TODO: name instead
+        [`(use ,card) (use-card! st usr card)] ;; TODO: name instead
         [`(bank ,res-list ,target) (bank! st usr res-list target)]
         [`(end) (change-turn! st)]
         [`(show ,(or 'board 'all)) (list 'raw (show st usr (second act)))]

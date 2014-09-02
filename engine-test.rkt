@@ -67,7 +67,7 @@
 
 ;; helper function; run a server command and print the response
 (define/contract (act! usr act)
-  (-> user? (cons/c command? list?) response?)
+  (-> user? (cons/c command? list?) void?)
   (define resp (handle-action! st usr act))
   (printf "~a: ~a\n" (user-name usr) resp))
 
@@ -75,8 +75,7 @@
 (printf "~a[37m" col-esc) ;; set color to white
 (display (state->string st))
 
-;; (act! ron '(end))
-
+#|
 (handle-action! st ron '(end))
 (handle-action! st dan '(end))
 (handle-action! st ron `(buy road ,(edg 0 0 1 1)))
@@ -88,5 +87,14 @@
 (handle-action! st dan '(end))
 (act! ron `(buy road ,(edg 0 2 1 1)))
 (act! ron `(buy road ,(edg -2 -2 -1 -1)))
+|#
+
+(handle-action! st ron '(buy dev-card))
+(handle-action! st ron '(buy dev-card))
+(handle-action! st ron '(buy dev-card))
+(handle-action! st ron '(buy dev-card))
+(handle-action! st ron '(buy dev-card))
+(handle-action! st ron '(use knight))
+(handle-action! st ron '(respond move-thief (1 . -3)))
 
 (display (state->string st))
