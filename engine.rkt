@@ -377,8 +377,7 @@
                                 (state-users st)))]
         [`(respond ,type ,response) (match (state-lock st)
           [(rlock (== usr) _ (== type) _ fn) (fn st response)]
-          [(rlock _ _ _ _ _) (list 'message "You can't do that right now.")]
-          [#f (list 'message "rlock is not waiting!")])]
+          [_ (list 'message "You can't do that right now.")])]
         [_ (list 'message (format "Invalid command: ~s" act))])]))
 
 ;; creates a new state, given a non-empty list of users
