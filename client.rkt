@@ -2,7 +2,8 @@
 ;; TODO: this is very rough; do it properly!
 #lang racket
 
-(require racket/contract "adv.rkt" "data.rkt")
+(require racket/contract "basic.rkt" "adv.rkt" "data.rkt" "constants.rkt"
+         "help.rkt")
 
 ;; macro for writing something over TCP
 (define-syntax-rule (send msg out) (fprintf out "~s\n" msg))
@@ -12,15 +13,15 @@
 (printf "Which port is the server running on?\n")
 (define port (read))
 (void (read-line)) ;; take trailing newline
-(define-values (in out) (tcp-connect "localhost" port))
-(file-stream-buffer-mode out 'line)
+(define-values (srv-in srv-out) (tcp-connect "localhost" port))
+(file-stream-buffer-mode srv-out 'line)
 
 (printf "Which name should be used?\n")
 (define name (read-line))
 (printf "Connecting to server...\n")
 
-(send name out)
-(define listener-port (read in))
+(send name srv-out)
+(define listener-port (read srv-in))
 
 (define-values (listen-in listen-out) (tcp-connect "localhost" listener-port))
 (file-stream-buffer-mode listen-out 'line)
@@ -61,6 +62,7 @@
         ;; TODO: validate the username
         [`("steal" ,usr) `(respond pick-target ,usr)]
 
+        [(cons "help" args) (display (help-cmd (map string->symbol args)))]
         [`("buy" "dev-card") `(buy dev-card)]
         [`("buy" "road" ,edg) (cond
           [(not (string->edge edg))
@@ -93,8 +95,8 @@
         [(cons "say" _) `(say ,(if (< (string-length msg) 4)
                                    "" (substring msg 4)))]
         [(cons cmd args) (cond
-          ;; TODO: include "client-only" commends like move and pick here
-          [(command? (string->symbol cmd))
+          [(or (command? (string->symbol cmd))
+               (member? (string->symbol cmd) client-commands))
             ;; TODO: show usage
             (printf "! invalid usage of ~a\n" cmd)]
           [else (printf "! invalid command: ~a\n" cmd)])]
