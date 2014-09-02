@@ -264,9 +264,10 @@
             [(list usr2) (set-state-lock! st #f) (steal-resource! st usr usr2)]
             [_ (set-state-lock! st (rlock usr "pick a target" 'pick-target usrs
                                           prompt-target!))
-               `(prompt pick-target ,(format "Will you steal from ~a?"
-                (apply string-append (add-between (map uname usrs) ", "
-                                                  #:before-last ", or "))))])]))
+               `(prompt pick-target
+                ,(format "Will you steal from ~a? Use the `steal` command"
+                  (apply string-append (add-between (map uname usrs) ", "
+                                        #:before-last ", or "))))])]))
 
 ;; choose a target for the thief
 (define/contract (prompt-target! st usrname)

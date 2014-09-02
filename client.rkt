@@ -57,7 +57,7 @@
             [(cons str _) (printf "! invalid resource: ~a\n" str)]
             [_ `(respond discard-resources ,(map string->symbol rlist))])]
         ;; TODO: validate the username
-        [`("pick" ,usr) `(respond pick-target ,usr)]
+        [`("steal" ,usr) `(respond pick-target ,usr)]
 
         [`("buy" "dev-card") `(buy dev-card)]
         [`("buy" "road" ,edg) (cond
