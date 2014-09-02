@@ -1,6 +1,6 @@
 #lang racket
 
-(require "board.rkt" "data.rkt" "engine.rkt" "basic.rkt")
+(require "board.rkt" "data.rkt" "engine.rkt" "basic.rkt" "adv.rkt")
 
 ;; TODO: unhardcode this maybe or something
 (define MAX-USERS 4)
@@ -139,10 +139,16 @@
   ;; TODO: 4
 ))
 
-(semaphore-post mutex)
+;; tell all users the game is starting
+(void (map (lambda (usr)
+            (match-define (list _ out mutex) (user-io usr))
+            (send (list 'broadcast "The game is starting.") out)
+            (send (handle-action! st usr '(show all)) out)
+            (send (list 'broadcast (format "It's ~a's turn." (uname usr))) out))
+           (state-users st)))
 
-;(printf "Initial state:\n")
-;(display (state->string st))
+
+(semaphore-post mutex)
 
 (logf 'debug "entering loop\n")
 (define (loop)

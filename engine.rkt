@@ -93,11 +93,6 @@
   (if (>= (user-veeps st leader) 10) leader #f))
 
 ;; --------------------------- BIG HELPER FUNCTIONS ---------------------------
-;; given a user, produce a string of its user name with correct color-coding
-(define/contract (uname usr)
-  (-> user? string?)
-  (format "~a[~am~a~a[37m" col-esc (user-color usr) (user-name usr) col-esc))
-
 ;; given a roll number, give players their earned resources
 (define/contract (apply-roll! st roll)
   (-> state? roll-num? void?)

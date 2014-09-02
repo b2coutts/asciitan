@@ -5,7 +5,7 @@
 (require racket/contract "basic.rkt" "cell.rkt" "data.rkt" "constants.rkt")
 
 (provide
-  resource->color style->string
+  resource->color style->string uname
 
   cell->label label->cell
 
@@ -28,6 +28,11 @@
   (match-define (list bg fg bold underline) sty)
   (format "~a[~a;~a~a~am" (integer->char #x1b) bg fg (if bold ";1" ";22")
                           (if underline ";4" ";24"))) 
+
+;; given a user, produce a string of its user name with correct color-coding
+(define/contract (uname usr)
+  (-> user? string?)
+  (format "~a[~am~a~a[37m" col-esc (user-color usr) (user-name usr) col-esc))
 
 ;; produce the label of a given cell
 (define/contract (cell->label cell)

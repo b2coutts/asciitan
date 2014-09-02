@@ -17,12 +17,15 @@
 
 (printf "Which name should be used?\n")
 (define name (read-line))
+(printf "Connecting to server...\n")
 
 (send name out)
 (define listener-port (read in))
 
 (define-values (listen-in listen-out) (tcp-connect "localhost" listener-port))
 (file-stream-buffer-mode listen-out 'line)
+
+(printf "Connection established; waiting for other users to connect.\n")
 
 (define (interp x) (with-input-from-string x (thunk (read))))
 
@@ -38,7 +41,6 @@
 
 ;; TODO: keep a list of all usernames in the game to verify username inputs
 
-(printf "Connection established; entering direct user-server REPL\n")
 (define (repl)
   (define evt (sync (wrap-evt (read-line-evt (current-input-port) 'any)
                               (curry cons 'user))
