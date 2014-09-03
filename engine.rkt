@@ -423,6 +423,9 @@
   (cond
     [(andmap (lambda (v) (not (board-vertex-pair b v))) nbrs)
       (set-board-vertex-pair! b vtx usr 'settlement)
+      (unless forward
+        (give-stock! usr (list->stock
+          (remove 'desert (filter-map (curry board-cell-resource b) vtx)))))
       (set-state-lock! st (rlock usr (format "place their ~a road"
                                              (if forward "1st" "2nd"))
                                  'init-road (list vtx usri forward) init-road!))
