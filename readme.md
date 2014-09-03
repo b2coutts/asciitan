@@ -2,7 +2,8 @@ asciitan is still under heavy development. In particular, the following things
 do not work:
 
     - Trading between users
-    - Various UI features
+    - Trading posts
+    - Longest road/Largest army
     - Non-local connections
 
 To run asciitan, run `racket catan-server.rkt` to start up the server. Then,
