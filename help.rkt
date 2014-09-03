@@ -84,13 +84,13 @@
 
     ;; cell/edge/vertex format info
     [(cons 'cell _) "To specify a cell, use the bold uppercase letter in its "
-      "top-left corner on the map.\n"]
+      "top-left corner on the map."]
     [(cons 'edge _) "An edge is specified with the format Z-n, where Z is an "
       "adjacent cell (see `help cell`), and n (in [1-6]) specifies its edge as "
-      "follows: the top edge is 1, go clockwise from there.\n"]
+      "follows: the top edge is 1, go clockwise from there."]
     [(cons 'vertex _) "A vertex is specified with the format Z.n, where Z is "
       "an adjacent cell (see `help cell`), and n (in [1-6]) specifies its "
-      "vertex as follows: the top-left vertex is 1, go clockwise from there.\n"]
+      "vertex as follows: the top-left vertex is 1, go clockwise from there."]
 
     ;; development card info
     [`(knight) (mkinfo "Development card: knight"
@@ -105,4 +105,4 @@
     [`(road-building) (mkinfo "Development card: road-building"
       "Build two roads for free (`build edge1 edge2`)")]
 
-    [(cons cmd _) (format "Unknown command: ~a\n" cmd)]))
+    [(cons cmd _) (format "Unknown command: ~a" cmd)]))

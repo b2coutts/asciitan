@@ -34,7 +34,7 @@
 (define commands '(buy use bank end show respond say))
 
 ;; list of client-only commands (i.e., ones which get translated to respond)
-(define client-commands '(move discard steal help take choose build))
+(define client-commands '(move discard steal help take choose build place))
 
 ;; list of commands which a player can use when it is not their turn
 (define icommands '(show say respond))
@@ -47,7 +47,7 @@
 
 ;; list of requests with which the user can be prompted
 (define prompts '(move-thief discard-resources pick-target monopoly
-                  year-of-plenty road-building))
+                  year-of-plenty road-building init-settlement init-road))
 
 ;; ANSI terminal color code escape character
 (define col-esc (integer->char #x1b))

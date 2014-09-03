@@ -74,6 +74,12 @@
             [_ `(respond discard-resources ,(map ss rlist))])]
         ;; TODO: validate the username
         [`("steal" ,usr) `(respond pick-target ,usr)]
+        [`("place" "road" ,estr) (match (string->edge estr)
+          [#f (printf "! invalid edge: ~a\n" estr)]
+          [edg `(respond init-road ,edg)])]
+        [`("place" "settlement" ,vstr) (match (string->vertex vstr)
+          [#f (printf "! invalid vertex: ~a\n" vstr)]
+          [vtx `(respond init-settlement ,vtx)])]
 
         [(cons "help" args) (match (help-cmd (map ss args))
           [(cons usage details) (printf "Usage: ~a\n~a\n" usage details)]
@@ -109,7 +115,7 @@
                                    "" (substring msg 4)))]
         [(cons cmd args) (cond
           [(or (command? (ss cmd)) (member? (ss cmd) client-commands))
-            (printf "Usage: ~a\n" (car (help-cmd cmd)))]
+            (printf "Usage: ~a\n" (car (help-cmd (list (ss cmd)))))]
           [else (printf "! invalid command: ~a\n" cmd)])]
         [_ (printf "! badly formatted request: ~a\n" msg)]))
       (when (not (void? req))

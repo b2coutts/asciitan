@@ -6,20 +6,6 @@
 (provide init-state handle-action!)
 
 ;; -------------------------- SMALL HELPER FUNCTIONS --------------------------
-;; sends a message to a user
-(define/contract (send-message usr msg)
-  (-> user? response? void?)
-  (match-define (list _ out mutex) (user-io usr))
-  (call-with-semaphore mutex (thunk (fprintf out "~s\n" msg)))
-  (void))
-
-;; broadcast a server message to everyone
-(define/contract (broadcast st fstr . args)
-  (->* (state? string?) #:rest (listof any/c) void?)
-  (map (curryr send-message (list 'broadcast (apply (curry format fstr) args)))
-       (state-users st))
-  (void))
-
 ;; give a user an (possibly negative) amount of victory points
 (define/contract (give-veeps! usr amt)
   (-> user? integer? void?)
@@ -61,6 +47,12 @@
   (-> state? (or/c user? #f))
   (define leader (first (sort (state-users st) > #:key user-veeps)))
   (if (>= (user-veeps leader) 10) leader #f))
+
+;; send initial info to players (after initial settlement/road placement)
+;; TODO: actually write this
+(define/contract (send-start-message st)
+  (-> state? void?)
+  (broadcast st "Game's starting, yo"))
 
 ;; --------------------------- BIG HELPER FUNCTIONS ---------------------------
 ;; given a roll number, give players their earned resources
@@ -420,22 +412,74 @@
       (show st usr 'veeps) "\n")]))
 
 ;; ------------------------------- API FUNCTIONS -------------------------------
+;; rlock prompt for getting an initial settlement placement
+(define/contract (init-settlement! st vtx)
+  (-> state? vertex? (or/c response? void?))
+  (match-define (rlock usr _ _ (cons usri forward) _) (state-lock st))
+  (define b (state-board st))
+  (define nbrs
+    (filter (lambda (v) (> (length (filter (curryr member? vtx) v)) 1))
+            board-vertex-list))
+  (cond
+    [(andmap (lambda (v) (not (board-vertex-pair b v))) nbrs)
+      (set-board-vertex-pair! b vtx usr 'settlement)
+      (set-state-lock! st (rlock usr (format "place their ~a road"
+                                             (if forward "1st" "2nd"))
+                                 'init-road (list vtx usri forward) init-road!))
+      (broadcast st "~a has placed their ~a settlement at ~a." (uname usr)
+        (if forward "1st" "2nd") (vertex->string vtx))]
+    [else (list 'message (format "You can't place your settlement at ~a!"
+                                 (vertex->string vtx)))]))
+
+;; rlock prompt for getting an initial road placement
+(define/contract (init-road! st edg)
+  (-> state? edge? (or/c response? void?))
+  (match-define (rlock usr _ _ (list vtx usri forward) _) (state-lock st))
+  (define b (state-board st))
+  (define adj (filter (curryr member? vtx) (list (car edg) (cdr edg))))
+  (cond
+    [(< (length (filter (curryr member? vtx) (list (car edg) (cdr edg)))) 2)
+      (list 'message (format "You must place your road next to ~a!"
+                             (vertex->string vtx)))]
+    [(board-road-owner b edg)
+      (list 'message (format "There is already a road at ~a!"
+                             (edge->string edg)))]
+    [else
+      (set-board-road-owner! b edg usr)
+      (broadcast st "~a has placed their ~a road at ~a." (uname usr)
+                    (if forward "1st" "2nd") (edge->string edg))
+      (match-define (cons new-usri new-forward) (match (cons usri forward)
+        [(cons (== (sub1 (length (state-users st)))) #t) (cons usri #f)]
+        [(cons (== 0) #f) (cons (void) (void))]
+        [(cons _ #t) (cons (add1 usri) #t)]
+        [(cons _ #f) (cons (sub1 usri) #f)]))
+      (cond
+        [(not (void? new-usri))
+          (set-state-lock! st
+            (rlock (list-ref (state-users st) new-usri)
+              (format "place their ~a settlement" (if new-forward "1st" "2nd"))
+              'init-settlement (cons new-usri new-forward) init-settlement!))]
+        [else (set-state-lock! st #f)
+              (send-start-message st)])]))
+
 ;; handle a request from the user
-;; TODO: replace any/c (3rd arg to ->) with (cons/c command? list?)
 (define/contract (handle-action! st usr act)
   (-> (or/c state? #f) user? any/c (or/c response? void?))
   (logf 'debug "handle-action!: usr=~a, act=~s\n" (user-name usr) act)
   (cond
+    ;; user tries to do something out of turn
     [(and (not (equal? usr (state-turnu st)))
           (cons? act)
           (not (member? (car act) icommands)))
       (list 'message "It is not your turn.")]
+    ;; user tries to do something during an active rlock
     [(and (state-lock st)
           (cons? act)
           (not (member? (car act) icommands)))
       (list 'message (format "Waiting for ~a to ~a."
                              (uname (rlock-holder (state-lock st)))
                              (rlock-action (state-lock st))))]
+    ;; general case
     [else
       (match act
         [`(buy dev-card) (buy-item! st usr 'dev-card (void))]
@@ -455,4 +499,6 @@
 ;; creates a new state, given a non-empty list of users
 (define/contract (init-state usrs)
   (-> (listof user?) state?)
-  (state usrs (first usrs) (create-board) (shuffle dev-cards) #f))
+  (state usrs (first usrs) (create-board) (shuffle dev-cards)
+         (rlock (first usrs) "place their 1st settlement" 'init-settlement
+                (cons 0 #t) init-settlement!)))

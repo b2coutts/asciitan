@@ -5,6 +5,8 @@
 (require racket/contract "basic.rkt" "cell.rkt" "data.rkt" "constants.rkt")
 
 (provide
+  send-message broadcast
+
   resource->color show-res style->string uname
 
   cell->label label->cell
@@ -15,6 +17,20 @@
 
   edge->string vertex->string string->edge string->vertex
 )
+
+;; sends a message to a user
+(define/contract (send-message usr msg)
+  (-> user? response? void?)
+  (match-define (list _ out mutex) (user-io usr))
+  (call-with-semaphore mutex (thunk (fprintf out "~s\n" msg)))
+  (void))
+
+;; broadcast a server message to everyone
+(define/contract (broadcast st fstr . args)
+  (->* (state? string?) #:rest (listof any/c) void?)
+  (map (curryr send-message (list 'broadcast (apply (curry format fstr) args)))
+       (state-users st))
+  (void))
 
 ;; produce the color code of the given resource
 (define/contract (resource->color res)

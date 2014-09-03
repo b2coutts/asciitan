@@ -2,7 +2,7 @@
 #lang racket
 
 (require "data.rkt" "constants.rkt" "board.rkt" "cell.rkt" "engine.rkt"
-         "basic.rkt")
+         "basic.rkt" "adv.rkt")
 
 ;; ----------------------------- UTILITY FUNCTIONS -----------------------------
 ;; produce a human-readable string for the given user
@@ -33,38 +33,18 @@
 
 ;; function to avoid eq?
 ;; TODO: right now, each user starts with 5 of everything for testing purposes
-(define (no-res) (make-hash (map (lambda (res) (cons res 5))
+(define (no-res) (make-hash (map (lambda (res) (cons res 0))
                                '(wood grain sheep ore clay))))
 
 (define ron (user "ron" 2 '(knight veep monopoly year-of-plenty road-building)
   (no-res) 95 
   (list (current-input-port) (current-output-port) (make-semaphore 1))))
 (define dan (user "dan" 2 '() (no-res) 96
-  (list (current-input-port) (open-output-file "/dev/null" #:exists 'truncate)
+  ;;(list (current-input-port) (open-output-file "/dev/null" #:exists 'truncate)
+  (list (current-input-port) (current-output-port)
         (make-semaphore 1))))
-(define st (state (list ron dan) ron (create-board) (shuffle dev-cards) #f))
+(define st (init-state (list ron dan)))
 (define b (state-board st))
-
-(define (vtx a b c d e f) (list (cons a b) (cons c d) (cons e f)))
-(define (edg a b c d) (cons (cons a b) (cons c d)))
-
-;; assign initial settlements/roads
-(define (init-rs!) ;; wrap in function to avoid polluting namespace
-
-  (define usr (first (state-users st)))
-  (define (f usr vtx) (set-board-vertex-pair! b vtx usr 'settlement))
-  (define (g usr edge) (set-board-road-owner! b edge usr))
-
-  (f ron (vtx -1 -1 0 -2 0 0))
-  (g ron (edg 0 -2 0 0))
-  (f ron (vtx 1 -1 1 1 2 0))
-  (g ron (edg 1 -1 1 1))
-
-  (f dan (vtx -2 2 -1 1 -1 3))
-  (g dan (edg -2 2 -1 3))
-  (f dan (vtx 1 -3 2 -4 2 -2))
-  (g dan (edg 1 -3 2 -4)))
-(init-rs!)
 
 ;; helper function; run a server command and print the response
 (define/contract (act! usr act)
@@ -76,25 +56,16 @@
 (printf "~a[37m" col-esc) ;; set color to white
 (display (state->string st))
 
-#|
-(handle-action! st ron '(end))
-(handle-action! st dan '(end))
-(handle-action! st ron `(buy road ,(edg 0 0 1 1)))
-(handle-action! st ron `(buy city ,(vtx 0 0 0 2 1 1)))
-(handle-action! st ron '(end))
-(handle-action! st dan `(buy dev-card ,(vtx 0 0 0 2 1 1)))
-(handle-action! st dan '(end))
-(handle-action! st ron '(end))
-(handle-action! st dan '(end))
-(act! ron `(buy road ,(edg 0 2 1 1)))
-(act! ron `(buy road ,(edg -2 -2 -1 -1)))
-|#
+(handle-action! st ron `(respond init-settlement ,(string->vertex "J.3")))
+(handle-action! st ron `(respond init-road ,(string->edge "J-2")))
 
-(handle-action! st ron '(show veeps))
-(handle-action! st ron '(use road-building))
-(handle-action! st ron '(respond road-building
-                          (((1 . 1) . (2 . 0)) . ((2 . 0) . (2 . 2)))))
-(handle-action! st ron '(buy city ((1 . -1) (1 . 1) (2 . 0))))
-(handle-action! st ron '(show veeps))
+(handle-action! st dan `(respond init-settlement ,(string->vertex "F.1")))
+(handle-action! st dan `(respond init-road ,(string->edge "F-1")))
+
+(handle-action! st dan `(respond init-settlement ,(string->vertex "D.2")))
+(handle-action! st dan `(respond init-road ,(string->edge "D-1")))
+
+(handle-action! st ron `(respond init-settlement ,(string->vertex "K.2")))
+(handle-action! st ron `(respond init-road ,(string->edge "K-2")))
 
 (display (state->string st))
