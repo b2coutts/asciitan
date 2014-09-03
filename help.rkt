@@ -27,15 +27,19 @@
     
     ;; commands
     ['(buy road) (mkinfo "buy road edge"
+      (format "Cost: ~a\n" (stock->string (hash-ref item-prices 'road)))
       "Build a road at edge. See `help edge` for info on how to input an "
       "edge.")]
     ['(buy city) (mkinfo "buy city vertex"
+      (format "Cost: ~a\n" (stock->string (hash-ref item-prices 'city)))
       "Build a city at vertex. See `help vertex` for info on how to input a "
       "vertex.")]
     ['(buy settlement) (mkinfo "buy settlement vertex"
+      (format "Cost: ~a\n" (stock->string (hash-ref item-prices 'settlement)))
       "Build a settlement at vertex. See `help vertex` for info on how to "
       "input a vertex.")]
     ['(buy dev-card) (mkinfo "buy dev-card"
+      (format "Cost: ~a\n" (stock->string (hash-ref item-prices 'dev-card)))
       "Buy a development card. Use `help card-name` for info on a specific "
       "card")]
     [(cons 'buy _) (mkinfo "buy item [place]"

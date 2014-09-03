@@ -37,29 +37,6 @@
   (hash-map stock (lambda (res amt) (give-res! usr res amt)))
   (void))
 
-;; convert a list of resources into a stock
-(define/contract (list->stock lst)
-  (-> (listof resource?) stock?)
-  (define stock (make-hash))
-  (map (lambda (res) (hash-set! stock res (+ (hash-ref stock res 0) 1))) lst)
-  stock)
-
-;; convert a stock into a list of resources
-(define/contract (stock->list stock)
-  (-> stock? (listof resource?))
-  (apply append (hash-map stock (lambda (res amt) (make-list amt res)))))
-
-;; convert a stock to a pretty-printed string
-(define/contract (stock->string stock)
-  (-> stock? string?)
-  (string-append
-    (if (zero? (hash-count stock)) "nothing" (apply string-append (add-between
-      (map (lambda (res) (format "~a[~am~a ~a" col-esc (resource->color res)
-                                               (hash-ref stock res) res))
-           (filter (lambda (res) (not (= (hash-ref stock res 0) 0))) resources))
-     (format "~a, " (style->string '(40 37 #f #f))))))
-    (style->string '(40 37 #f #f))))
-
 ;; generates a properly-weighted random roll (from 2-12)
 (define/contract (random-roll)
   (-> roll-num?)
