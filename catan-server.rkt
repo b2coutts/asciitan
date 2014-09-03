@@ -2,7 +2,6 @@
 
 (require "board.rkt" "data.rkt" "engine.rkt" "basic.rkt" "adv.rkt")
 
-;; TODO: unhardcode this maybe or something
 (define MAX-USERS 4)
 
 (define st #f) ;; global state variable (initial value is a place holder)
@@ -17,8 +16,6 @@
   (make-hash (map (lambda (res) (cons res 0)) '(wood grain sheep ore clay))))
 
 ;; begins interacting with a given user on the given input/output ports
-;; TODO: code for ending
-;; TODO: prompting
 (define/contract (run-listener parent usr init-port)
   (-> thread? user? output-port? void?)
   (define tcpl (tcp-listen 0))
@@ -27,13 +24,13 @@
   (logf 'info "Awaiting listener connection from client ~a on port ~a...\n"
     (user-name usr) port)
   (define-values (in out) (tcp-accept tcpl))
-  (file-stream-buffer-mode out 'line) ;; TODO: is line-buffering okay?
+  (file-stream-buffer-mode out 'line)
   (set-user-io! usr (list in out (third (user-io usr))))
   (logf 'info "Client ~a listener connection established.\n" (user-name usr))
   (thread-send parent 'done)
   (let loop []
     (logf 'debug "listener for ~a waiting for request...\n" (user-name usr))
-    (define line (sync (read-line-evt in 'any))) ;; TODO: eof
+    (define line (sync (read-line-evt in 'any)))
     (cond
       [(eof-object? line) (printf "Client ~a sent EOF.\n" (user-name usr))]
       [else
@@ -68,7 +65,7 @@
       [continue
         (logf 'info "Awaiting connection...\n")
         (define-values (in out) (tcp-accept listener))
-        (file-stream-buffer-mode out 'line) ;; TODO: is line-buffering okay?
+        (file-stream-buffer-mode out 'line)
         (logf 'debug "connection made, waiting for name...\n")
         (define usr (user (read in) 2 '() (empty-stock)
                           (list-ref colors (length usrs))
@@ -76,74 +73,60 @@
         (logf 'info "Connection established; name is '~a'\n" (user-name usr))
         (define parent (current-thread))
         (thread (thunk (run-listener parent usr out)))
-        (sync (thread-receive-evt)) ;; TODO: do this better?
+        (sync (thread-receive-evt))
         (thread-receive)
         (loop (cons usr usrs))]
       [else usrs]))
   (init-state (loop '())))
 
-;; TODO: remove this section
-;; ----------------- UTILITY FUNCTIONS STOLEN FROM ENGINE-TEST -----------------
-;; produce a human-readable string for the given user
-(define/contract (user->string usr)
-  (-> user? string?)
-  (string-append
-    (format "~a[~am~a~a[37m: " (integer->char #x1b) (user-color usr)
-            (user-name usr) (integer->char #x1b))
-    (format "dev-cards: ~a; " (user-cards usr))
-    (apply (curry format "wood: ~a, grain: ~a, sheep: ~a, ore: ~a, clay: ~a\n")
-           (map (lambda (res) (hash-ref (user-res usr) res))
-                '(wood grain sheep ore clay)))))
-
-;; produce a human-readable string for a state
-(define/contract (state->string st [show-dev-cards #f])
-  (->* (state?) (boolean?) string?)
-  (string-append
-    "---------------------------------------------------------------------\n"
-    (format "~a's turn.\n" (user-name (state-turnu st)))
-    (board->string (state-board st))
-    (apply string-append (map user->string (state-users st)))
-    (if show-dev-cards (format "~a\n" (state-cards st)) "")
-    "---------------------------------------------------------------------\n"))
-
 ;; ----------------------------- MAIN RUNNING CODE -----------------------------
 ;; initialize connections to the clients, and the game state
 (set! st (init-server))
 
+(logf 'info "Starting game.\n")
+
 ;; TODO: allow the clients to choose their initial settlements/roads
 (logf 'debug "beginning initial settlement/road placement\n")
-((thunk
-  (define (vtx a b c d e f) (list (cons a b) (cons c d) (cons e f)))
-  (define (edg a b c d) (cons (cons a b) (cons c d)))
+(define (setl usr vtx)
+  (set-board-vertex-pair! (state-board st) (string->vertex vtx) usr
+                          'settlement))
+(define (road usr edge)
+  (set-board-road-owner! (state-board st) (string->edge edge) usr))
 
-  (define (f usr vtx) (set-board-vertex-pair! (state-board st) vtx usr 'settlement))
-  (define (g usr edge) (set-board-road-owner! (state-board st) edge usr))
-  (void)
+(define usrs (state-users st))
 
-  ;; (g (first (state-users st)) (edg 0 0 0 2))
-  ;; (g (first (state-users st)) (edg -3 -3 -2 -2))
+(setl (first usrs) "C.4")
+(road (first usrs) "C-3")
+(setl (first usrs) "Q.1")
+(road (first usrs) "Q-6")
 
-  (define usrs (state-users st))
+(when (>= (length usrs) 2)
+  (setl (second usrs) "F.3")
+  (road (second usrs) "F-2")
+  (setl (second usrs) "L.4")
+  (road (second usrs) "L-3"))
 
-  (f (first usrs) (vtx -2 2 -1 1 -1 3))
-  (g (first usrs) (edg -2 2 -1 1))
-  (f (first usrs) (vtx 1 1 2 0 2 2))
-  (g (first usrs) (edg 1 1 2 2))
+(when (>= (length usrs) 3)
+  (setl (third usrs) "A.2")
+  (road (third usrs) "A-1")
+  (setl (third usrs) "J.3")
+  (road (third usrs) "J-3"))
 
-  (when (>= (length usrs) 2)
-    (f (second usrs) (vtx 0 0 0 2 1 1))
-    (g (second usrs) (edg 0 0 0 2))
-    (f (second usrs) (vtx -1 -3 -1 -1 0 -2))
-    (g (second usrs) (edg -1 -3 0 -2)))
+(when (>= (length usrs) 4)
+  (setl (fourth usrs) "I.3")
+  (road (fourth usrs) "N-4")
+  (setl (fourth usrs) "O.2")
+  (road (fourth usrs) "O-2"))
 
-  (when (>= (length usrs) 3)
-    (f (third usrs) (vtx 1 -3 1 -1 2 -2))
-    (g (third usrs) (edg 1 -1 2 -2))
-    (f (third usrs) (vtx -2 -2 -2 0 -1 -1))
-    (g (third usrs) (edg -2 -2 -1 -1)))
-
-  ;; TODO: 4
-))
+;; give initial resources
+(set-user-res! (first usrs)
+  (make-hash '([ore . 0] [grain . 1] [clay . 1] [wood . 1] [sheep . 0])))
+(set-user-res! (second usrs)
+  (make-hash '([ore . 0] [grain . 1] [clay . 1] [wood . 1] [sheep . 0])))
+(set-user-res! (third usrs)
+  (make-hash '([ore . 0] [grain . 1] [clay . 1] [wood . 1] [sheep . 0])))
+(set-user-res! (fourth usrs)
+  (make-hash '([ore . 0] [grain . 1] [clay . 1] [wood . 1] [sheep . 0])))
 
 ;; tell all users the game is starting
 (void (map (lambda (usr)
@@ -153,7 +136,6 @@
             (send (list 'broadcast (format "It's ~a's turn."
                                            (uname (state-turnu st)))) out))
            (state-users st)))
-
 
 (semaphore-post mutex)
 
