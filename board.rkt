@@ -159,7 +159,7 @@
 ;; ---------------------------- MUTATING FUNCTIONS ----------------------------
 ;; set the owner of the road on an edge
 (define/contract (set-board-road-owner! b edge usr)
-  (-> board? edge? user? void?)
+  (-> board? edge? (or/c #f user?) void?)
   (hash-set! (board-edges b) (edge-normalize edge) usr))
 
 ;; set the owner/building pair of a vertex

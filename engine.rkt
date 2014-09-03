@@ -307,18 +307,21 @@
 
 (define/contract (prompt-road-building! st edges)
   (-> state? (cons/c edge? edge?) (or/c response? void?))
+  (define usr (state-turnu st))
   (cond
     [(equal? (car edges) (cdr edges))
       (list 'message "Those are the same edge!")]
-    [(not (can-road? (state-board st) (state-turnu st) (car edges)))
+    [(not (can-road? (state-board st) usr (car edges)))
       (list 'message "You can't build a road there!")]
-    [(not (can-road? (state-board st) (state-turnu st) (cdr edges)))
-      (list 'message "You can't build a road there!")]
-    [else (set-board-road-owner! (state-board st) (car edges) (state-turnu st))
-          (set-board-road-owner! (state-board st) (cdr edges) (state-turnu st))
-          (set-state-lock! st #f)
-          (broadcast st "~a built roads at ~a and ~a." (uname (state-turnu st))
-            (edge->string (car edges)) (edge->string (cdr edges)))]))
+    [else (set-board-road-owner! (state-board st) (car edges) usr)
+          (cond
+            [(can-road? (state-board st) usr (cdr edges))
+              (set-board-road-owner! (state-board st) (cdr edges) usr)
+              (set-state-lock! st #f)
+              (broadcast st "~a built roads at ~a and ~a." (uname usr)
+                (edge->string (car edges)) (edge->string (cdr edges)))]
+            [else (set-board-road-owner! (state-board st) (car edges) #f)
+                  (list 'message "You can't build a road there!")])]))
 
 
 ;; -------------------------- MAJOR HELPER FUNCTIONS ---------------------------

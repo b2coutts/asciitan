@@ -92,6 +92,6 @@
 
 (handle-action! st ron '(use road-building))
 (handle-action! st ron '(respond road-building
-                          (((0 . 0) . (1 . -1)) . ((1 . 1) . (2 . 0)))))
+                          (((1 . 1) . (2 . 0)) . ((2 . 2) . (2 . 4)))))
 
 (display (state->string st))
