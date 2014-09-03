@@ -352,6 +352,7 @@
 ;; TODO
 (define/contract (use-card! st usr card)
   (-> state? user? dev-card? (or/c response? void?))
+  (define usr (state-turnu st))
   (cond
     [(not (member? card (user-cards usr)))
       (list 'message (format "You don't have a ~a!" card))]
@@ -359,25 +360,27 @@
       (set-user-cards! usr (remove card (user-cards usr)))
       (broadcast st "~a uses ~a." (uname usr) card)
       (match card
-        ['knight (set-state-lock! st (rlock (state-turnu st) "move the thief"
+        ['knight (set-state-lock! st (rlock usr "move the thief"
                                             'move-thief #f prompt-move-thief!))
           `(prompt move-thief
             "Where will you move the thief? Use the `move` command")]
         ['monopoly
-          (set-state-lock! st (rlock (state-turnu st) "choose a resource"
+          (set-state-lock! st (rlock usr "choose a resource"
                                      'monopoly #f prompt-monopoly!))
           `(prompt monopoly
             "Which resource will you steal? Use the `take` command")]
         ['year-of-plenty
-          (set-state-lock! st (rlock (state-turnu st) "choose 2 resources"
+          (set-state-lock! st (rlock usr "choose 2 resources"
                                      'year-of-plenty #f prompt-year-of-plenty!))
           `(prompt year-of-plenty
             "Which resources will you take? Use the `choose` command")]
         ['road-building
-          (set-state-lock! st (rlock (state-turnu st) "choose 2 edges"
+          (set-state-lock! st (rlock usr "choose 2 edges"
                                      'road-building #f prompt-road-building!))
           `(prompt road-building
-            "Where will you build your 2 roads? Use the `build` command")])]))
+            "Where will you build your 2 roads? Use the `build` command")]
+        ['veep (give-veeps! usr 1)
+               (broadcast st "~a gains 1 victory point." (uname usr))])]))
 
 ;; TODO: trading posts
 (define/contract (bank! st usr res-list target)
