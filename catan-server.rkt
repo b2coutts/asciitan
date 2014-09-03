@@ -144,7 +144,8 @@
             (match-define (list _ out mutex) (user-io usr))
             (send (list 'broadcast "The game is starting.") out)
             (send (handle-action! st usr '(show all)) out)
-            (send (list 'broadcast (format "It's ~a's turn." (uname usr))) out))
+            (send (list 'broadcast (format "It's ~a's turn."
+                                           (uname (state-turnu st)))) out))
            (state-users st)))
 
 
