@@ -81,6 +81,9 @@
       "When prompted by the road-building dev card, selects two places to "
       "build roads. The road at edge1 is built first, then the road at "
       "edge2.")]
+    [(cons 'place _ ) (mkinfo "place settlement vertex | place road edge"
+      "When prompted before the game, place an initial settlement or road. See "
+      "`help edge` and `help vertex` for info on how to input an edge/vertex.")]
 
     ;; cell/edge/vertex format info
     [(cons 'cell _) "To specify a cell, use the bold uppercase letter in its "
