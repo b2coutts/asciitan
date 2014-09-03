@@ -114,14 +114,17 @@
         [_ (printf "! badly formatted request: ~a\n" msg)]))
       (when (not (void? req))
         (fprintf listen-out "~s\n" req))
-      (repl)]
+      (when (not (equal? req 'game-over))
+        (repl))]
     [(cons 'server msg)
-      (match (interp msg)
-        [`(broadcast ,msg) (printf "* ~a\n" msg)]
-        [`(message ,msg) (printf "? ~a\n" msg)]
-        [`(raw ,msg) (display msg)]
-        [`(say ,name ,msg) (printf "~a: ~a\n" name msg)]
-        [`(prompt ,type ,msg) (printf "> ~a\n" msg)]
-        [x (printf "ERROR: unknown command from server: ~a\n" x)])
-      (repl)]))
+      (define continue
+        (match (interp msg)
+          [`(broadcast ,msg) (printf "* ~a\n" msg)]
+          [`(message ,msg) (printf "? ~a\n" msg)]
+          [`(raw ,msg) (display msg)]
+          [`(say ,name ,msg) (printf "~a: ~a\n" name msg)]
+          [`(prompt ,type ,msg) (printf "> ~a\n" msg)]
+          [`(game-over) #f]
+          [x (printf "ERROR: unknown command from server: ~a\n" x)]))
+      (when continue (repl))]))
 (repl)

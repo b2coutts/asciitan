@@ -184,8 +184,12 @@
   (-> state? (or/c response? void?))
   (define winner (game-over? st))
   (cond
-    ;; TODO: send some sort of endgame signal
-    [winner (broadcast st "~a won the game!" (uname winner))]
+    [winner (broadcast st "~a wins the game!" (uname winner))
+            (map (lambda (usr)
+                  (send-message usr (list 'message (show st usr 'veeps))))
+                 (state-users st))
+            (map (curryr send-message '(game-over)) (state-users st))
+            '(game-over)]
     [else
       (define usrs (state-users st))
       (define oldind (- (length usrs) (length (member (state-turnu st) usrs))))

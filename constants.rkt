@@ -43,7 +43,7 @@
 (define showables '(turn veeps board resources users dev-cards all))
 
 ;; list of valid response types (from the server to the client)
-(define responses '(broadcast message raw say prompt))
+(define responses '(broadcast message raw say prompt game-over))
 
 ;; list of requests with which the user can be prompted
 (define prompts '(move-thief discard-resources pick-target monopoly

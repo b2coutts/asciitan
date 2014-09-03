@@ -7,6 +7,7 @@
 
 (define st #f) ;; global state variable (initial value is a place holder)
 (define mutex (make-semaphore 0)) ;; mutex for st
+(define main-thread (current-thread))
 
 (define-syntax-rule (send msg out) (fprintf out "~s\n" msg))
 
@@ -34,15 +35,21 @@
   (let loop []
     (logf 'debug "listener for ~a waiting for request...\n" (user-name usr))
     (define line (sync (read-line-evt in 'any))) ;; TODO: eof
-    (define req (with-input-from-string line (thunk (read))))
-    (logf 'debug "listener for ~a received request ~s\n" (user-name usr) req)
-    (define response
-      (call-with-semaphore mutex (thunk (handle-action! st usr req))))
-    (logf 'debug "listener responding with ~s\n" response)
-    (unless (void? response)
-      (call-with-semaphore (third (user-io usr))
-        (thunk (send response out))))
-    (loop)))
+    (cond
+      [(eof-object? line) (printf "Client ~a sent EOF.\n" (user-name usr))]
+      [else
+        (define req (with-input-from-string line (thunk (read))))
+        (logf 'debug "listener ~a received request ~s\n" (user-name usr) req)
+        (define response
+          (call-with-semaphore mutex (thunk (handle-action! st usr req))))
+        (logf 'debug "listener responding with ~s\n" response)
+        (cond
+          [(equal? response '(game-over)) (thread-send main-thread 'game-over)]
+          [else
+            (unless (void? response)
+              (call-with-semaphore (third (user-io usr))
+                (thunk (send response out))))
+            (loop)])])))
 
 ;; dispatch listeners, generate the initial state
 ;; TODO: close initial tcp connection after establishing listener?
@@ -64,7 +71,7 @@
         (define-values (in out) (tcp-accept listener))
         (file-stream-buffer-mode out 'line) ;; TODO: is line-buffering okay?
         (logf 'debug "connection made, waiting for name...\n")
-        (define usr (user (read in) 8 '() (empty-stock)
+        (define usr (user (read in) 9 '() (empty-stock)
                           (list-ref colors (length usrs))
                           (list in out (make-semaphore 1))))
         (logf 'info "Connection established; name is '~a'\n" (user-name usr))
@@ -151,9 +158,8 @@
 
 (semaphore-post mutex)
 
-(logf 'debug "entering loop\n")
-(define (loop)
-  (define evt (sync (thread-receive-evt)))
-  (printf "EVT:   ~a\n" (thread-receive))
-  (loop))
-(loop)
+(logf 'debug "waiting for game over\n")
+(void (sync (thread-receive-evt)))
+(match (thread-receive)
+  ['game-over (logf 'info "Game is over; exiting.\n")]
+  [msg (printf "ERROR: main server thread received message: ~s\n" msg)])
