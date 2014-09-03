@@ -295,7 +295,15 @@
                                               (uname (cdr a-u))))
          (map cons amts usrs))
     (string-append reset ", ") #:before-last (string-append reset ", and ")))))
-                        
+
+(define/contract (prompt-year-of-plenty! st ress)
+  (-> state? (cons/c resource? resource?) void?)
+  (define usr (state-turnu st))
+  (give-res! usr (car ress))
+  (give-res! usr (cdr ress))
+  (set-state-lock! st #f)
+  (broadcast st (format "~a gained ~a." (uname usr)
+                  (stock->string (list->stock (list (car ress) (cdr ress)))))))
 
 ;; -------------------------- MAJOR HELPER FUNCTIONS ---------------------------
 (define/contract (buy-item! st usr item args)
@@ -331,7 +339,7 @@
   (-> state? user? dev-card? (or/c response? void?))
   (cond
     [(not (member? card (user-cards usr)))
-      (list 'message (format "You don't have a ~a!\n" card))]
+      (list 'message (format "You don't have a ~a!" card))]
     [else
       (set-user-cards! usr (remove card (user-cards usr)))
       (broadcast st "~a uses ~a." (uname usr) card)
@@ -344,8 +352,13 @@
           (set-state-lock! st (rlock (state-turnu st) "choose a resource"
                                      'monopoly #f prompt-monopoly!))
           `(prompt monopoly
-            "Which resource will you steal? Use the `take` command")])]))
-
+            "Which resource will you steal? Use the `take` command")]
+        ['year-of-plenty
+          (set-state-lock! st (rlock (state-turnu st) "choose 2 resources"
+                                     'year-of-plenty #f prompt-year-of-plenty!))
+          `(prompt year-of-plenty
+            "Which resources will you take? Use the `choose` command")])]))
+          
 ;; TODO: trading posts
 (define/contract (bank! st usr res-list target)
   (-> state? user? (listof resource?) resource? (or/c response? void?))

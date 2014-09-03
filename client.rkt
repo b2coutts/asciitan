@@ -56,10 +56,14 @@
         ;; prompt responses
         [`("move" ,cstr) (define cell (label->cell (ss cstr)))
           (cond [cell `(respond move-thief ,cell)]
-                [else (printf "! invalid cell: ~a\n" cell)])]
+                [else (printf "! invalid cell: ~a\n" cstr)])]
         [`("take" ,res) (cond
           [(resource? (ss res)) `(respond monopoly ,(ss res))]
           [else (printf "! invalid resource: ~a\n" res)])]
+        [`("choose" ,res1 ,res2) (cond
+          [(not (resource? (ss res1))) (printf "! invalid resource: ~a\n" res1)]
+          [(not (resource? (ss res2))) (printf "! invalid resource: ~a\n" res2)]
+          [else `(respond year-of-plenty ,(cons (ss res1) (ss res2)))])]
         [(cons "discard" rlist)
           (match (filter-not (compose resource? ss) rlist)
             [(cons str _) (printf "! invalid resource: ~a\n" str)]

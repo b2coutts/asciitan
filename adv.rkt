@@ -49,7 +49,7 @@
 
 ;; produce the cell associated with the given label; #f if the label is invalid
 (define/contract (label->cell lbl)
-  (-> symbol? (or/c cell-valid? #f))
+  (-> symbol? (or/c #f cell-valid?))
   (define result (assoc lbl cell-labels))
   (if result (cdr result) #f))
 
