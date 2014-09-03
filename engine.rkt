@@ -317,7 +317,8 @@
     [(equal? (car edges) (cdr edges))
       (list 'message "Those are the same edge!")]
     [(not (can-road? (state-board st) usr (car edges)))
-      (list 'message "You can't build a road there!")]
+      (list 'message (format "You can't build a road at ~a!"
+                             (edge->string (car edges))))]
     [else (set-board-road-owner! (state-board st) (car edges) usr)
           (cond
             [(can-road? (state-board st) usr (cdr edges))
@@ -326,7 +327,8 @@
               (broadcast st "~a built roads at ~a and ~a." (uname usr)
                 (edge->string (car edges)) (edge->string (cdr edges)))]
             [else (set-board-road-owner! (state-board st) (car edges) #f)
-                  (list 'message "You can't build a road there!")])]))
+                  (list 'message (format "You can't build a road at ~a!"
+                                         (edge->string (cdr edges))))])]))
 
 
 ;; -------------------------- MAJOR HELPER FUNCTIONS ---------------------------
@@ -337,11 +339,14 @@
     [(not (can-afford? usr (hash-ref item-prices item)))
       (list 'message (format "You can't afford ~a!" item))]
     [(and (equal? item 'settlement) (not (can-settle? b usr args)))
-      (list 'message "You can't build a building there!")]
+      (list 'message (format "You can't build a settlement at ~a!"
+                             (vertex->string args)))]
     [(and (equal? item 'city) (not (can-city? b usr args)))
-      (list 'message "You can't build a city there!")]
+      (list 'message (format "You can't build a city at ~a!"
+                             (vertex->string args)))]
     [(and (equal? item 'road) (not (can-road? b usr args)))
-      (list 'message "You can't build a road there!")]
+      (list 'message (format "You can't build a road at ~a!"
+                             (edge->string args)))]
     [(and (equal? item 'dev-card) (empty? (state-cards st)))
       (list 'message "There are no more dev cards left to draw!")]
     [else (spend-stock! usr (hash-ref item-prices item))
