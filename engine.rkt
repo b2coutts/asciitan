@@ -302,8 +302,24 @@
   (give-res! usr (car ress))
   (give-res! usr (cdr ress))
   (set-state-lock! st #f)
-  (broadcast st (format "~a gained ~a." (uname usr)
-                  (stock->string (list->stock (list (car ress) (cdr ress)))))))
+  (broadcast st "~a gained ~a." (uname usr)
+                (stock->string (list->stock (list (car ress) (cdr ress))))))
+
+(define/contract (prompt-road-building! st edges)
+  (-> state? (cons/c edge? edge?) (or/c response? void?))
+  (cond
+    [(equal? (car edges) (cdr edges))
+      (list 'message "Those are the same edge!")]
+    [(not (can-road? (state-board st) (state-turnu st) (car edges)))
+      (list 'message "You can't build a road there!")]
+    [(not (can-road? (state-board st) (state-turnu st) (cdr edges)))
+      (list 'message "You can't build a road there!")]
+    [else (set-board-road-owner! (state-board st) (car edges) (state-turnu st))
+          (set-board-road-owner! (state-board st) (cdr edges) (state-turnu st))
+          (set-state-lock! st #f)
+          (broadcast st "~a built roads at ~a and ~a." (uname (state-turnu st))
+            (edge->string (car edges)) (edge->string (cdr edges)))]))
+
 
 ;; -------------------------- MAJOR HELPER FUNCTIONS ---------------------------
 (define/contract (buy-item! st usr item args)
@@ -357,8 +373,13 @@
           (set-state-lock! st (rlock (state-turnu st) "choose 2 resources"
                                      'year-of-plenty #f prompt-year-of-plenty!))
           `(prompt year-of-plenty
-            "Which resources will you take? Use the `choose` command")])]))
-          
+            "Which resources will you take? Use the `choose` command")]
+        ['road-building
+          (set-state-lock! st (rlock (state-turnu st) "choose 2 edges"
+                                     'road-building #f prompt-road-building!))
+          `(prompt road-building
+            "Where will you build your 2 roads? Use the `build` command")])]))
+
 ;; TODO: trading posts
 (define/contract (bank! st usr res-list target)
   (-> state? user? (listof resource?) resource? (or/c response? void?))

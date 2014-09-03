@@ -90,7 +90,8 @@
 (act! ron `(buy road ,(edg -2 -2 -1 -1)))
 |#
 
-(handle-action! st ron '(use year-of-plenty))
-(handle-action! st ron '(respond year-of-plenty (wood . clay)))
+(handle-action! st ron '(use road-building))
+(handle-action! st ron '(respond road-building
+                          (((0 . 0) . (1 . -1)) . ((1 . 1) . (2 . 0)))))
 
 (display (state->string st))

@@ -64,6 +64,10 @@
           [(not (resource? (ss res1))) (printf "! invalid resource: ~a\n" res1)]
           [(not (resource? (ss res2))) (printf "! invalid resource: ~a\n" res2)]
           [else `(respond year-of-plenty ,(cons (ss res1) (ss res2)))])]
+        [`("build" ,e1 ,e2) (match (cons (string->edge e1) (string->edge e2))
+          [(cons #f _) (printf "! invalid edge: ~a\n" e1)]
+          [(cons _ #f) (printf "! invalid edge: ~a\n" e2)]
+          [edgs `(respond road-building ,edgs)])]
         [(cons "discard" rlist)
           (match (filter-not (compose resource? ss) rlist)
             [(cons str _) (printf "! invalid resource: ~a\n" str)]
