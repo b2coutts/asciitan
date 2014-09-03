@@ -39,7 +39,8 @@
 ;; given a user, produce a string of its user name with correct color-coding
 (define/contract (uname usr)
   (-> user? string?)
-  (format "~a[~am~a~a[37m" col-esc (user-color usr) (user-name usr) col-esc))
+  (format "~a~a~a" (style->string `(,(user-color usr) 40 #t #f)) (user-name usr)
+                   reset))
 
 ;; produce the label of a given cell
 (define/contract (cell->label cell)
