@@ -32,7 +32,6 @@
 (random-seed 1231)
 
 ;; function to avoid eq?
-;; TODO: right now, each user starts with 5 of everything for testing purposes
 (define (no-res) (make-hash (map (lambda (res) (cons res 0))
                                '(wood grain sheep ore clay))))
 

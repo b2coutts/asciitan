@@ -49,7 +49,6 @@
   (if (>= (user-veeps leader) 10) leader #f))
 
 ;; send initial info to players (after initial settlement/road placement)
-;; TODO: actually write this
 (define/contract (send-start-message st)
   (-> state? void?)
   (map (lambda (usr)
@@ -151,8 +150,6 @@
                 "Select ~a resources to discard. Use the `discard` command."
                 (quotient numres 2))))])]))
 
-;; TODO: handle endgame conditions
-;; TODO: handle roll #7
 (define/contract (change-turn! st)
   (-> state? (or/c response? void?))
   (define winner (game-over? st))
@@ -339,7 +336,6 @@
               (broadcast st "~a has built a dev card." (uname usr))
               (list 'message (format "You draw a ~a." draw))])]))
 
-;; TODO
 (define/contract (use-card! st usr card)
   (-> state? user? dev-card? (or/c response? void?))
   (define usr (state-turnu st))
@@ -499,7 +495,7 @@
       (match act
         [`(buy dev-card) (buy-item! st usr 'dev-card (void))]
         [`(buy ,item ,args) (buy-item! st usr item args)]
-        [`(use ,card) (use-card! st usr card)] ;; TODO: name instead
+        [`(use ,card) (use-card! st usr card)]
         [`(bank ,res-list ,target) (bank! st usr res-list target)]
         [`(end) (change-turn! st)]
         [`(show ,(or 'board 'all)) (list 'raw (show st usr (second act)))]

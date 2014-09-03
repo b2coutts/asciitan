@@ -18,7 +18,6 @@
   (cons usage (apply string-append details)))
 
 ;; produces info for the given command
-;; TODO: Available commands: buy use bank end show respond move discard steal help
 (define/contract (help-cmd cmd)
   (-> (listof symbol?) (or/c (cons/c string? string?) string?))
   (match cmd

@@ -30,7 +30,6 @@
 (define items '(city settlement dev-card road))
 
 ;; list of valid commands to the server
-;; TODO: add info, help; remove show
 (define commands '(buy use bank end show respond say))
 
 ;; list of client-only commands (i.e., ones which get translated to respond)

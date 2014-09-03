@@ -1,5 +1,4 @@
 ;; client for connecting to the soa server
-;; TODO: this is very rough; do it properly!
 #lang racket
 
 (require racket/contract "basic.rkt" "adv.rkt" "data.rkt" "constants.rkt"
@@ -43,8 +42,6 @@
                 (parse (list->string (dropf xs (or/c #\tab #\space)))))]))
 
 (define ss string->symbol) ;; to make my life easier
-
-;; TODO: keep a list of all usernames in the game to verify username inputs
 
 (define (repl)
   (define evt (sync (wrap-evt (read-line-evt (current-input-port) 'any)
@@ -111,8 +108,6 @@
         [`("show" ,thing) (cond
           [(showable? (ss thing)) `(show ,(ss thing))]
           [else (printf "! invalid thing to show: ~a\n" thing)])]
-        ;; TODO: remove this testing command
-        [(cons "raw" _) (interp (substring msg 4))]
         [(cons "say" _) `(say ,(if (< (string-length msg) 4)
                                    "" (substring msg 4)))]
         [(cons cmd args) (cond
