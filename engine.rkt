@@ -20,6 +20,11 @@
        (state-users st))
   (void))
 
+;; give a user an (possibly negative) amount of victory points
+(define/contract (give-veeps! usr amt)
+  (-> user? integer? void?)
+  (set-user-veeps! usr (+ (user-veeps usr) amt)))
+
 ;; give a specified (possibly negative) amount of a resource to a user
 (define/contract (give-res! usr res [amt 1])
   (->* (user? resource?) (integer?) void?)
@@ -74,22 +79,12 @@
   (set-state-cards! st xs)
   x)
 
-;; TODO: implement this fully
-;; produce the number of veeps a given user has
-(define/contract (user-veeps st usr)
-  (-> state? user? integer?)
-  (foldr + 0 (map (lambda (vtx) (match (board-vertex-pair (state-board st) vtx)
-                                  [(cons (== usr) 'settlement) 1]
-                                  [(cons (== usr) 'city) 2]
-                                  [_ 0]))
-                  board-vertex-list)))
-
 ;; if the game is over, returns the winner; otherwise, returns #f
 (define/contract (game-over? st)
   (-> state? (or/c user? #f))
-  (define veeps (map (curry user-veeps st) (state-users st)))
+  (define veeps (map user-veeps (state-users st)))
   (define leader (first (sort (state-users st)
-                       (lambda (x y) (< (user-veeps st x) (user-veeps st y))))))
+                       (lambda (x y) (< (user-veeps x) (user-veeps y))))))
   (if (>= (user-veeps st leader) 10) leader #f))
 
 ;; --------------------------- BIG HELPER FUNCTIONS ---------------------------
@@ -340,6 +335,7 @@
     [else (spend-stock! usr (hash-ref item-prices item))
           (match item
             [(or 'city 'settlement)
+              (give-veeps! usr (if (equal? item 'city) 2 1))
               (set-board-vertex-pair! b args usr item)
               (broadcast st "~a has built a ~a at ~a." (uname usr) item
                 (vertex->string args))]
@@ -403,6 +399,12 @@
   (match thing
     ['turn (format "It's ~a's turn." (uname (state-turnu st)))]
     ['board (board->string (state-board st))]
+    ['veeps (format "Victory points: ~a."
+      (apply string-append
+        (add-between
+          (map (lambda (usr) (format "~a (~a)" (uname usr) (user-veeps usr)))
+               (sort (state-users st) > #:key user-veeps))
+          ", ")))]
     ['resources (format "You have ~a." (stock->string (user-res usr)))]
     ['users (string-append "Players are " (list->string (apply append 
       (add-between (map (compose string->list uname) (state-users st))
@@ -417,7 +419,8 @@
       (show st usr 'board)
       (show st usr 'resources) "\n"
       (show st usr 'dev-cards) "\n"
-      (show st usr 'users) "\n")]))
+      (show st usr 'users) "\n"
+      (show st usr 'veeps) "\n")]))
 
 ;; ------------------------------- API FUNCTIONS -------------------------------
 ;; handle a request from the user

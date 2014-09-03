@@ -64,7 +64,7 @@
         (define-values (in out) (tcp-accept listener))
         (file-stream-buffer-mode out 'line) ;; TODO: is line-buffering okay?
         (logf 'debug "connection made, waiting for name...\n")
-        (define usr (user (read in) '(knight veep monopoly year-of-plenty road-building) (empty-stock)
+        (define usr (user (read in) 2 '() (empty-stock)
                           (list-ref colors (length usrs))
                           (list in out (make-semaphore 1))))
         (logf 'info "Connection established; name is '~a'\n" (user-name usr))

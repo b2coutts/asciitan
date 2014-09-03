@@ -42,6 +42,7 @@
 
 (define-struct/contract user (
   [name string?]                      ;; name of the user
+  [veeps integer?]                    ;; number of victory points
   [cards (listof dev-card?)]          ;; list of the user's held dev cards
   [res (hash/c resource? integer?)]   ;; list of the user's held resources
   [color integer?]                    ;; the user's color
