@@ -10,81 +10,95 @@
   "Available commands: "
   ,@(add-between (map ~a (remove 'respond (append commands client-commands)))
                  " ")
-  "\nType `help command` for detailed info on a single command.\n")))
+  "\nType `help command` for detailed info on a single command.")))
 
-;; to make my life easier in help-cmd
-(define sa string-append)
+;; helper function to construct usage and detailed info
+(define/contract (mkinfo usage . details)
+  (->* (string?) #:rest (listof string?) (cons/c string? string?))
+  (cons usage (apply string-append details)))
 
-;; produce an info message for the given command
+;; produces info for the given command
 ;; TODO: Available commands: buy use bank end show respond move discard steal help
 (define/contract (help-cmd cmd)
-  (-> (listof symbol?) string?)
+  (-> (listof symbol?) (or/c (cons/c string? string?) string?))
   (match cmd
     ;; no arguments
     ['() general-help]
     
     ;; commands
-    ['(buy road) (sa "Usage: buy road edge\n"
+    ['(buy road) (mkinfo "buy road edge"
       "Build a road at edge. See `help edge` for info on how to input an "
-      "edge.\n")]
-    ['(buy city) (sa "Usage: buy city vertex\n"
+      "edge.")]
+    ['(buy city) (mkinfo "buy city vertex"
       "Build a city at vertex. See `help vertex` for info on how to input a "
-      "vertex.\n")]
-    ['(buy settlement) (sa "Usage: buy settlement vertex\n"
+      "vertex.")]
+    ['(buy settlement) (mkinfo "buy settlement vertex"
       "Build a settlement at vertex. See `help vertex` for info on how to "
-      "input a vertex.\n")]
-    ['(buy dev-card) (sa "Usage: buy dev-card\n"
+      "input a vertex.")]
+    ['(buy dev-card) (mkinfo "buy dev-card"
       "Buy a development card. Use `help card-name` for info on a specific "
-      "card\n")]
-    [(cons 'buy _) (sa "Usage: buy item [place]\n"
+      "card")]
+    [(cons 'buy _) (mkinfo "buy item [place]"
       "Buy an item. item is one of road, city, settlement, dev-card. Type "
-       "`help buy item` for item-specific info.\n")]
-    [(cons 'use _) (sa "Usage: use dev-card\n"
+       "`help buy item` for item-specific info.")]
+    [(cons 'use _) (mkinfo "use dev-card"
       "Use a development card. dev-card is the name of one of your development "
-      "cards\n")]
+      "cards")]
     ;; TODO: update this when trading posts finally work
-    [(cons 'bank _) (sa "Usage: bank take give1 give2 give3 give4\n"
+    [(cons 'bank _) (mkinfo "bank take give1 give2 give3 give4"
       "Trade 4 resources (give[1-4]) for one resource (take).")]
-    [(cons 'end _) (sa "Usage: end\n"
-      "End your turn.\n")]
-    [(cons 'show _) (sa "Usage: show thing\n"
+    [(cons 'end _) (mkinfo "end"
+      "End your turn.")]
+    [(cons 'show _) (mkinfo "show thing"
       "Provides game info. thing is one of board, resources, users, dev-cards, "
-      "all.\n")]
-    [(cons 'say _) (sa "Usage: say message\n"
-      "Sends a chat message to every user.\n")]
-    [(cons 'move _) (sa "Usage: move cell\n"
-      "When prompted, moves the thief to cell. See `help cell` for info on "
-      "how to input a cell.\n")]
-    [(cons 'discard _) (sa "Usage: discard res1 res2 ...\n"
-      "When prompted (due to having >7 resources on a 7 roll), discards your "
-      "resources.\n")]
-    [(cons 'steal _) (sa "Usage: steal user\n"
-      "When prompted, selects a user from whom to steal a random resource.\n")]
-    [(cons 'help _) (sa "Usage: help [command]\n"
+      "all.")]
+    [(cons 'say _) (mkinfo "say message"
+      "Sends a chat message to every user.")]
+    [(cons 'help _) (mkinfo "help [command]"
       "Displays info on how to use a command. If no command is specified, "
-      "displays a list of commands.\n")]
+      "displays a list of commands.")]
+
+    ;; prompt responses
+    [(cons 'move _) (mkinfo "move cell"
+      "When prompted, moves the thief to cell. See `help cell` for info on "
+      "how to input a cell.")]
+    [(cons 'discard _) (mkinfo "discard res1 res2 ..."
+      "When prompted (due to having >7 resources on a 7 roll), discards your "
+      "resources.")]
+    [(cons 'steal _) (mkinfo "steal user"
+      "When prompted, selects a user from whom to steal a random resource.")]
+    [(cons 'take _) (mkinfo "take resource"
+      "When prompted by the monopoly dev card, selects a resource to steal "
+      "from everyone.")]
+    [(cons 'choose _) (mkinfo "choose res1 res2"
+      "When prompted by the year-of-plenty dev card, selects two resources "
+      "to gain.")]
+    [(cons 'build _) (mkinfo "build edge1 edge2"
+      "When prompted by the road-building dev card, selects two places to "
+      "build roads. The road at edge1 is built first, then the road at "
+      "edge2.")]
 
     ;; cell/edge/vertex format info
-    [(cons 'cell _) (sa "To specify a cell, use the bold uppercase letter in its "
-      "top-left corner on the map.\n")]
-    [(cons 'edge _) (sa "An edge is specified with the format Z-n, where Z is an "
+    [(cons 'cell _) "To specify a cell, use the bold uppercase letter in its "
+      "top-left corner on the map.\n"]
+    [(cons 'edge _) "An edge is specified with the format Z-n, where Z is an "
       "adjacent cell (see `help cell`), and n (in [1-6]) specifies its edge as "
-      "follows: the top edge is 1, go clockwise from there.\n")]
-    [(cons 'vertex _) (sa "A vertex is specified with the format Z.n, where Z is an "
-      "adjacent cell (see `help cell`), and n (in [1-6]) specifies its vertex "
-      "as follows: the top-left vertex is 1, go clockwise from there.\n")]
+      "follows: the top edge is 1, go clockwise from there.\n"]
+    [(cons 'vertex _) "A vertex is specified with the format Z.n, where Z is "
+      "an adjacent cell (see `help cell`), and n (in [1-6]) specifies its "
+      "vertex as follows: the top-left vertex is 1, go clockwise from there.\n"]
 
     ;; development card info
-    [`(knight) (sa "Development card: knight\n"
-      "Move the thief to a location of your choosing (`move` cell).\n")]
-    [`(veep) (sa "Development card: veep\n"
-      "Gain 1 victory point.\n")]
-    [`(monopoly) (sa "Development card: monopoly\n"
+    [`(knight) (mkinfo "Development card: knight"
+      "Move the thief to a location of your choosing (`move` cell).")]
+    [`(veep) (mkinfo "Development card: veep"
+      "Gain 1 victory point.")]
+    [`(monopoly) (mkinfo "Development card: monopoly"
       "Choose a resource. Every other player gives you all of that resource "
-      "that they have (`take resource`).\n")]
-    [`(year-of-plenty) (sa "Development card: year-of-plenty\n"
-      "Gain two resources of your choosing (`choose res1 res2`).\n")]
-    [`(road-building) (sa "Development card: road-building\n"
-      "Build two roads for free (`build edge1 edge2`)\n")]
+      "that they have (`take resource`).")]
+    [`(year-of-plenty) (mkinfo "Development card: year-of-plenty"
+      "Gain two resources of your choosing (`choose res1 res2`).")]
+    [`(road-building) (mkinfo "Development card: road-building"
+      "Build two roads for free (`build edge1 edge2`)")]
 
     [(cons cmd _) (format "Unknown command: ~a\n" cmd)]))

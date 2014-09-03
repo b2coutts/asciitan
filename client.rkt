@@ -75,7 +75,9 @@
         ;; TODO: validate the username
         [`("steal" ,usr) `(respond pick-target ,usr)]
 
-        [(cons "help" args) (display (help-cmd (map ss args)))]
+        [(cons "help" args) (match (help-cmd (map ss args))
+          [(cons usage details) (printf "Usage: ~a\n~a\n" usage details)]
+          [info (printf "~a\n" info)])]
         [`("buy" "dev-card") `(buy dev-card)]
         [`("buy" "road" ,edg) (cond
           [(not (string->edge edg))
@@ -106,10 +108,8 @@
         [(cons "say" _) `(say ,(if (< (string-length msg) 4)
                                    "" (substring msg 4)))]
         [(cons cmd args) (cond
-          [(or (command? (ss cmd))
-               (member? (ss cmd) client-commands))
-            ;; TODO: show usage
-            (printf "! invalid usage of ~a\n" cmd)]
+          [(or (command? (ss cmd)) (member? (ss cmd) client-commands))
+            (printf "Usage: ~a\n" (car (help-cmd cmd)))]
           [else (printf "! invalid command: ~a\n" cmd)])]
         [_ (printf "! badly formatted request: ~a\n" msg)]))
       (when (not (void? req))
