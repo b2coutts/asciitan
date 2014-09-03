@@ -2,8 +2,6 @@ asciitan is still under heavy development. In particular, the following things
 do not work:
 
     - Trading between users
-    - Manual placement of initial roads/settlements
-    - Normal initial resource amounts
     - Various UI features
     - Non-local connections
 
