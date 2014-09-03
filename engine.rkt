@@ -52,7 +52,11 @@
 ;; TODO: actually write this
 (define/contract (send-start-message st)
   (-> state? void?)
-  (broadcast st "Game's starting, yo"))
+  (map (lambda (usr)
+        (send-message usr (list 'broadcast "The game is starting."))
+        (send-message usr (handle-action! st usr '(show all))))
+       (state-users st))
+  (void))
 
 ;; --------------------------- BIG HELPER FUNCTIONS ---------------------------
 ;; given a roll number, give players their earned resources
@@ -425,12 +429,16 @@
       (set-board-vertex-pair! b vtx usr 'settlement)
       (unless forward
         (give-stock! usr (list->stock
-          (remove 'desert (filter-map (curry board-cell-resource b) vtx)))))
+          (remove 'desert (filter-map (curry board-cell-resource b)
+                                      (filter cell-valid? vtx))))))
       (set-state-lock! st (rlock usr (format "place their ~a road"
                                              (if forward "1st" "2nd"))
                                  'init-road (list vtx usri forward) init-road!))
       (broadcast st "~a has placed their ~a settlement at ~a." (uname usr)
-        (if forward "1st" "2nd") (vertex->string vtx))]
+        (if forward "1st" "2nd") (vertex->string vtx))
+      (send-message usr (list 'prompt 'init-road
+        (format "Where will you place your ~a road? Use the `place` command"
+                (if forward "1st" "2nd"))))]
     [else (list 'message (format "You can't place your settlement at ~a!"
                                  (vertex->string vtx)))]))
 
@@ -458,6 +466,10 @@
         [(cons _ #f) (cons (sub1 usri) #f)]))
       (cond
         [(not (void? new-usri))
+          (send-message (list-ref (state-users st) new-usri) (list 'prompt
+            'settlement (format "Where will you place your ~a settlement? ~a"
+                                (if new-forward "1st" "2nd")
+                                "Use the `place` command")))
           (set-state-lock! st
             (rlock (list-ref (state-users st) new-usri)
               (format "place their ~a settlement" (if new-forward "1st" "2nd"))

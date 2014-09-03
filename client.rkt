@@ -10,13 +10,15 @@
 
 (display (style->string '(40 37 #f #f)))
 
+(printf "Welcome to asciitan!\n")
 (printf "Which port is the server running on?\n")
 (define port (read))
 (void (read-line)) ;; take trailing newline
 (define-values (srv-in srv-out) (tcp-connect "localhost" port))
 (file-stream-buffer-mode srv-out 'line)
 
-(printf "Which name should be used?\n")
+;; TODO: avoid duplicate names, maybe limit name length
+(printf "Which nickname do you want to use?\n")
 (define name (read-line))
 (printf "Connecting to server...\n")
 

@@ -82,19 +82,25 @@
 ;; initialize connections to the clients, and the game state
 (set! st (init-server))
 
+;; tell all users that initial settlement/road placement is starting
 (logf 'info "beginning initial settlement/road placement\n")
-(semaphore-post mutex)
 
-;; tell all users the game is starting
-#|
 (void (map (lambda (usr)
-            (match-define (list _ out mutex) (user-io usr))
-            (send (list 'broadcast "The game is starting.") out)
-            (send (handle-action! st usr '(show all)) out)
-            (send (list 'broadcast (format "It's ~a's turn."
-                                           (uname (state-turnu st)))) out))
-           (state-users st)))
-|#
+  (match-define (list _ out mutex) (user-io usr))
+  (call-with-semaphore mutex (thunk
+    (send (handle-action! st usr '(show board)) out)
+    (send '(broadcast "Starting initial settlement/road placement.") out)
+    (send (list 'broadcast (format "Order is: ~a."
+      (apply string-append (add-between (map uname (state-users st)) ", "))))
+      out)
+    (send '(broadcast "Type `help` for a list of commands.") out))))
+ (state-users st)))
+
+(call-with-semaphore (third (user-io (first (state-users st)))) (thunk
+  (send '(prompt init-settlement "Where will you place your 1st settlement?")
+        (second (user-io (first (state-users st)))))))
+
+(semaphore-post mutex)
 
 
 (logf 'info "waiting for game over\n")
