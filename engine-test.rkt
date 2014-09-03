@@ -94,7 +94,7 @@
 (handle-action! st ron '(use road-building))
 (handle-action! st ron '(respond road-building
                           (((1 . 1) . (2 . 0)) . ((2 . 0) . (2 . 2)))))
-(handle-action! st ron '(buy city ((2 . 0) (2 . 2) (3 . 1))))
+(handle-action! st ron '(buy city ((1 . -1) (1 . 1) (2 . 0))))
 (handle-action! st ron '(show veeps))
 
 (display (state->string st))

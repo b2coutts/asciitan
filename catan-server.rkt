@@ -13,8 +13,8 @@
 ;; produce a stock of empty resources for a user
 (define/contract (empty-stock)
   (-> stock?)
-  ;; TODO: change from 2 to 0
-  (make-hash (map (lambda (res) (cons res 2)) '(wood grain sheep ore clay))))
+  ;; TODO: set initial resources to 0
+  (make-hash (map (lambda (res) (cons res 5)) '(wood grain sheep ore clay))))
 
 ;; begins interacting with a given user on the given input/output ports
 ;; TODO: code for ending
@@ -64,7 +64,7 @@
         (define-values (in out) (tcp-accept listener))
         (file-stream-buffer-mode out 'line) ;; TODO: is line-buffering okay?
         (logf 'debug "connection made, waiting for name...\n")
-        (define usr (user (read in) 2 '() (empty-stock)
+        (define usr (user (read in) 8 '() (empty-stock)
                           (list-ref colors (length usrs))
                           (list in out (make-semaphore 1))))
         (logf 'info "Connection established; name is '~a'\n" (user-name usr))

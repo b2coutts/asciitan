@@ -82,10 +82,8 @@
 ;; if the game is over, returns the winner; otherwise, returns #f
 (define/contract (game-over? st)
   (-> state? (or/c user? #f))
-  (define veeps (map user-veeps (state-users st)))
-  (define leader (first (sort (state-users st)
-                       (lambda (x y) (< (user-veeps x) (user-veeps y))))))
-  (if (>= (user-veeps st leader) 10) leader #f))
+  (define leader (first (sort (state-users st) > #:key user-veeps)))
+  (if (>= (user-veeps leader) 10) leader #f))
 
 ;; --------------------------- BIG HELPER FUNCTIONS ---------------------------
 ;; given a roll number, give players their earned resources
@@ -109,8 +107,9 @@
    (state-users st))
   (void))
 
-;; given a user and a vertex, #t iff the user is allowed to build at the vertex
-(define/contract (can-build? b usr vtx)
+;; given a user and a vertex, #t iff the user is allowed to build a settlement
+;; at the vertex
+(define/contract (can-settle? b usr vtx)
   (-> board? user? vertex? boolean?)
   ;; list of all neighbours of vtx, and vtx itself
   (define nbrs
@@ -124,6 +123,13 @@
 
   (and (andmap (lambda (v) (not (board-vertex-pair b v))) nbrs)
        (ormap (lambda (e) (equal? (board-road-owner b e) usr)) edgs)))
+
+;; #t iff the user can bulid a city at the given vertex
+(define/contract (can-city? b usr vtx)
+  (-> board? user? vertex? boolean?)
+  (match (board-vertex-pair b vtx)
+    [(cons (app (curry user=? usr) #t) 'settlement) #t]
+    [_ #f]))
 
 ;; given a user and an edge, #t iff the user is allowed to build a road there
 (define/contract (can-road? b usr edg)
@@ -326,8 +332,10 @@
   (cond
     [(not (can-afford? usr (hash-ref item-prices item)))
       (list 'message (format "You can't afford ~a!" item))]
-    [(and (building? item) (not (can-build? b usr args)))
+    [(and (equal? item 'settlement) (not (can-settle? b usr args)))
       (list 'message "You can't build a building there!")]
+    [(and (equal? item 'city) (not (can-city? b usr args)))
+      (list 'message "You can't build a city there!")]
     [(and (equal? item 'road) (not (can-road? b usr args)))
       (list 'message "You can't build a road there!")]
     [(and (equal? item 'dev-card) (empty? (state-cards st)))
@@ -335,7 +343,7 @@
     [else (spend-stock! usr (hash-ref item-prices item))
           (match item
             [(or 'city 'settlement)
-              (give-veeps! usr (if (equal? item 'city) 2 1))
+              (give-veeps! usr 1)
               (set-board-vertex-pair! b args usr item)
               (broadcast st "~a has built a ~a at ~a." (uname usr) item
                 (vertex->string args))]
