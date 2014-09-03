@@ -70,8 +70,9 @@
 ;; convert a stock to a pretty-printed string
 (define/contract (stock->string stock)
   (-> stock? string?)
+  (define num-res (foldr + 0 (hash-map stock (lambda (_ res) res))))
   (string-append
-    (if (zero? (hash-count stock)) "nothing" (apply string-append (add-between
+    (if (zero? num-res) "nothing" (apply string-append (add-between
       (map (lambda (res) (format "~a[~am~a ~a" col-esc (resource->color res)
                                                (hash-ref stock res) res))
            (filter (lambda (res) (not (= (hash-ref stock res 0) 0))) resources))
