@@ -36,7 +36,8 @@
 (define (no-res) (make-hash (map (lambda (res) (cons res 5))
                                '(wood grain sheep ore clay))))
 
-(define ron (user "ron" '() (no-res) 95 
+(define ron (user "ron" '(knight veep monopoly year-of-plenty road-building)
+  (no-res) 95 
   (list (current-input-port) (current-output-port) (make-semaphore 1))))
 (define dan (user "dan" '() (no-res) 96
   (list (current-input-port) (open-output-file "/dev/null" #:exists 'truncate)
@@ -89,12 +90,7 @@
 (act! ron `(buy road ,(edg -2 -2 -1 -1)))
 |#
 
-(handle-action! st ron '(buy dev-card))
-(handle-action! st ron '(buy dev-card))
-(handle-action! st ron '(buy dev-card))
-(handle-action! st ron '(buy dev-card))
-(handle-action! st ron '(buy dev-card))
-(handle-action! st ron '(use knight))
-(handle-action! st ron '(respond move-thief (1 . -3)))
+(handle-action! st ron '(use monopoly))
+(handle-action! st ron '(respond monopoly grain))
 
 (display (state->string st))

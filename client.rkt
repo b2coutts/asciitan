@@ -40,6 +40,8 @@
           (cons (list->string x)
                 (parse (list->string (dropf xs (or/c #\tab #\space)))))]))
 
+(define ss string->symbol) ;; to make my life easier
+
 ;; TODO: keep a list of all usernames in the game to verify username inputs
 
 (define (repl)
@@ -52,49 +54,52 @@
     [(cons 'user msg)
       (define req (match (parse msg)
         ;; prompt responses
-        [`("move" ,cstr) (define cell (label->cell (string->symbol cstr)))
+        [`("move" ,cstr) (define cell (label->cell (ss cstr)))
           (cond [cell `(respond move-thief ,cell)]
                 [else (printf "! invalid cell: ~a\n" cell)])]
+        [`("take" ,res) (cond
+          [(resource? (ss res)) `(respond monopoly ,(ss res))]
+          [else (printf "! invalid resource: ~a\n" res)])]
         [(cons "discard" rlist)
-          (match (filter-not (compose resource? string->symbol) rlist)
+          (match (filter-not (compose resource? ss) rlist)
             [(cons str _) (printf "! invalid resource: ~a\n" str)]
-            [_ `(respond discard-resources ,(map string->symbol rlist))])]
+            [_ `(respond discard-resources ,(map ss rlist))])]
         ;; TODO: validate the username
         [`("steal" ,usr) `(respond pick-target ,usr)]
 
-        [(cons "help" args) (display (help-cmd (map string->symbol args)))]
+        [(cons "help" args) (display (help-cmd (map ss args)))]
         [`("buy" "dev-card") `(buy dev-card)]
         [`("buy" "road" ,edg) (cond
           [(not (string->edge edg))
             (printf "! invalid edge: ~a\n" edg)]
           [else `(buy road ,(string->edge edg))])]
         [`("buy" ,item ,vtx) (cond
-          [(not (building? (string->symbol item)))
+          [(not (building? (ss item)))
             (printf "! invalid usage of buy\n")]
           [(not (string->vertex vtx))
             (printf "! invalid vertex: ~a\n" vtx)]
-          [else `(buy ,(string->symbol item) ,(string->vertex vtx))])]
-        [`("use" ,card) (match (string->symbol card)
+          [else `(buy ,(ss item) ,(string->vertex vtx))])]
+        [`("use" ,card) (match (ss card)
           [(? dev-card? dc) `(use ,dc)]
           [_ (printf "! not a dev card: ~a\n" card)])]
         [(cons "bank" (cons target lst))
           (define err (ormap (lambda (res) (cond
-                              [(resource? (string->symbol res)) #f]
+                              [(resource? (ss res)) #f]
                               [else (printf "! invalid resource: ~a\n" res)]))
                              (cons target lst)))
           (if err (void)
-            `(bank ,(map string->symbol lst) ,(string->symbol target)))]
+            `(bank ,(map ss lst) ,(ss target)))]
         [`("end") '(end)]
         [`("show" ,thing) (cond
-          [(showable? (string->symbol thing)) `(show ,(string->symbol thing))]
+          [(showable? (ss thing)) `(show ,(ss thing))]
           [else (printf "! invalid thing to show: ~a\n" thing)])]
         ;; TODO: remove this testing command
         [(cons "raw" _) (interp (substring msg 4))]
         [(cons "say" _) `(say ,(if (< (string-length msg) 4)
                                    "" (substring msg 4)))]
         [(cons cmd args) (cond
-          [(or (command? (string->symbol cmd))
-               (member? (string->symbol cmd) client-commands))
+          [(or (command? (ss cmd))
+               (member? (ss cmd) client-commands))
             ;; TODO: show usage
             (printf "! invalid usage of ~a\n" cmd)]
           [else (printf "! invalid command: ~a\n" cmd)])]

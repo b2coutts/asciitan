@@ -279,6 +279,24 @@
             (add-between (map uname usrs) ", " #:before-last ", or "))]
         [else (set-state-lock! st #f) (steal-resource! st holdr usr)])]))
 
+;; prompt a target for a resource to take from everyone, for monopoly
+(define/contract (prompt-monopoly! st res)
+  (-> state? resource? void?)
+  (define usr (state-turnu st))
+  (define usrs (remove usr (state-users st)))
+  (define amts (map (lambda (u) (define usr-amt (hash-ref (user-res u) res))
+                                  (hash-set! (user-res u) res 0)
+                                  usr-amt)
+                    usrs))
+  (give-res! usr res (foldr + 0 amts))
+  (set-state-lock! st #f)
+  (broadcast st "~a stole ~a." (uname usr) (apply string-append (add-between
+    (map (lambda (a-u) (format "~a~a from ~a" (show-res (car a-u) res) reset
+                                              (uname (cdr a-u))))
+         (map cons amts usrs))
+    (string-append reset ", ") #:before-last (string-append reset ", and ")))))
+                        
+
 ;; -------------------------- MAJOR HELPER FUNCTIONS ---------------------------
 (define/contract (buy-item! st usr item args)
   (-> state? user? item? (or/c vertex? edge? void?) (or/c response? void?))
@@ -316,12 +334,17 @@
       (list 'message (format "You don't have a ~a!\n" card))]
     [else
       (set-user-cards! usr (remove card (user-cards usr)))
+      (broadcast st "~a uses ~a." (uname usr) card)
       (match card
         ['knight (set-state-lock! st (rlock (state-turnu st) "move the thief"
                                             'move-thief #f prompt-move-thief!))
           `(prompt move-thief
             "Where will you move the thief? Use the `move` command")]
-            )]))
+        ['monopoly
+          (set-state-lock! st (rlock (state-turnu st) "choose a resource"
+                                     'monopoly #f prompt-monopoly!))
+          `(prompt monopoly
+            "Which resource will you steal? Use the `take` command")])]))
 
 ;; TODO: trading posts
 (define/contract (bank! st usr res-list target)
@@ -385,8 +408,8 @@
         [`(show ,thing) (list 'message (show st usr thing))]
         [`(say ,msg) (void (map (curryr send-message `(say ,(uname usr) ,msg))
                                 (state-users st)))]
-        [`(respond ,type ,response) (match (state-lock st)
-          [(rlock (== usr) _ (== type) _ fn) (fn st response)]
+        [`(respond ,type ,resp) (match (state-lock st)
+          [(rlock (app (curry user=? usr) #t) _ (== type) _ fn) (fn st resp)]
           [_ (list 'message "You can't do that right now.")])]
         [_ (list 'message (format "Invalid command: ~s" act))])]))
 

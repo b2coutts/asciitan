@@ -4,7 +4,7 @@
 (provide item-prices dev-cards items commands client-commands icommands
          resources responses showables prompts
 
-         col-esc
+         col-esc reset
 
          board-cell-list cell-labels board-edge-list board-vertex-list)
 
@@ -46,10 +46,14 @@
 (define responses '(broadcast message raw say prompt))
 
 ;; list of requests with which the user can be prompted
-(define prompts '(move-thief discard-resources pick-target))
+(define prompts '(move-thief discard-resources pick-target monopoly
+                  year-of-plenty road-building))
 
 ;; ANSI terminal color code escape character
 (define col-esc (integer->char #x1b))
+
+;; string to reset ANSI terminal mode to default
+(define reset (format "~a[37;40;22;24m" col-esc))
 
 
 ;; list of every cell on the board

@@ -5,9 +5,11 @@
 (require racket/contract "basic.rkt" "cell.rkt" "data.rkt" "constants.rkt")
 
 (provide
-  resource->color style->string uname
+  resource->color show-res style->string uname
 
   cell->label label->cell
+
+  user=?
 
   edge->string vertex->string string->edge string->vertex
 )
@@ -21,6 +23,11 @@
              ['wood 32]
              ['ore 90]
              ['desert 37]))
+
+;; produces a color-coded amount of resources
+(define/contract (show-res amt res)
+  (-> integer? resource? string?)
+  (format "~a~a ~a" (style->string `(,(resource->color res) 40 #f #f)) amt res))
 
 ;; given a style, produce the ANSI escape string for inducing that style
 (define/contract (style->string sty)
@@ -44,6 +51,11 @@
   (-> symbol? (or/c cell-valid? #f))
   (define result (assoc lbl cell-labels))
   (if result (cdr result) #f))
+
+;; #t iff two users have the same name
+(define/contract (user=? usr1 usr2)
+  (-> user? user? boolean?)
+  (string=? (user-name usr1) (user-name usr2)))
 
 ;; pretty-print an edge
 (define/contract (edge->string edg)
