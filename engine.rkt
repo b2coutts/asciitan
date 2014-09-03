@@ -364,6 +364,7 @@
 (define/contract (show st usr thing)
   (-> state? user? showable? string?)
   (match thing
+    ['turn (format "It's ~a's turn." (uname (state-turnu st)))]
     ['board (board->string (state-board st))]
     ['resources (format "You have ~a." (stock->string (user-res usr)))]
     ['users (string-append "Players are " (list->string (apply append 
@@ -375,6 +376,7 @@
        (add-between (map (compose string->list symbol->string) (user-cards usr))
                     '(#\, #\space)))))])]
     ['all (string-append
+      (show st usr 'turn) "\n"
       (show st usr 'board)
       (show st usr 'resources) "\n"
       (show st usr 'dev-cards) "\n"

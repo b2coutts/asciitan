@@ -40,7 +40,7 @@
 (define icommands '(show say respond))
 
 ;; list of showable things (i.e., valid arguments to show)
-(define showables '(board resources users dev-cards all))
+(define showables '(turn board resources users dev-cards all))
 
 ;; list of valid response types (from the server to the client)
 (define responses '(broadcast message raw say prompt))
