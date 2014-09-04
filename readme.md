@@ -1,7 +1,6 @@
 asciitan is still under heavy development. In particular, the following things
 do not work:
 
-    - Trading between users
     - Trading posts
     - Longest road/Largest army
     - Non-local connections
