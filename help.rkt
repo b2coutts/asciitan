@@ -52,6 +52,10 @@
       "Trade 4 resources (give[1-4]) for one resource (take).")]
     [(cons 'end _) (mkinfo "end"
       "End your turn.")]
+    [(cons 'offer _) (mkinfo "offer user give1 give2 ... for take1 take2 ..."
+      "Example: offer jerry clay clay ore for sheep sheep grain wood\n"
+      "Offers a trade to another user. give1, give2, ... are the resources you "
+      "are offering, and take1, take2, ... are the resources you want.")]
     [(cons 'show _) (mkinfo "show thing"
       "Provides game info. thing is one of board, resources, users, dev-cards, "
       "all.")]
@@ -80,9 +84,13 @@
       "When prompted by the road-building dev card, selects two places to "
       "build roads. The road at edge1 is built first, then the road at "
       "edge2.")]
-    [(cons 'place _ ) (mkinfo "place settlement vertex | place road edge"
+    [(cons 'place _) (mkinfo "place settlement vertex | place road edge"
       "When prompted before the game, place an initial settlement or road. See "
       "`help edge` and `help vertex` for info on how to input an edge/vertex.")]
+    [(cons 'accept _) (mkinfo "accept"
+      "When prompted, accepts a trade offer.")]
+    [(cons 'decline _) (mkinfo "decline"
+      "When prompted, declines a trade offer.")]
 
     ;; cell/edge/vertex format info
     [(cons 'cell _) "To specify a cell, use the bold uppercase letter in its "

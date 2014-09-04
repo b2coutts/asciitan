@@ -79,6 +79,17 @@
         [`("place" "settlement" ,vstr) (match (string->vertex vstr)
           [#f (printf "! invalid vertex: ~a\n" vstr)]
           [vtx `(respond init-settlement ,vtx)])]
+        [(cons "offer" (cons target ress)) (cond
+          [(not (member? "for" ress)) (printf "Usage: ~a\n"
+                                              (car (help-cmd '(offer))))]
+          [else
+            (match-define-values (give (cons "for" get))
+                                 (splitf-at ress (not/c "for")))
+            (match (filter (not/c (compose resource? ss)) (append give get))
+              [(cons str _) (printf "! invalid resource: ~a\n" str)]
+              ['() `(offer ,target ,(map ss give) ,(map ss get))])])]
+        ['("accept") '(respond trade accept)]
+        ['("decline") '(respond trade decline)]
 
         [(cons "help" args) (match (help-cmd (map ss args))
           [(cons usage details) (printf "Usage: ~a\n~a\n" usage details)]

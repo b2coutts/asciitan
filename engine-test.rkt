@@ -55,16 +55,22 @@
 (printf "~a[37m" col-esc) ;; set color to white
 (display (state->string st))
 
+;; initial setup
 (handle-action! st ron `(respond init-settlement ,(string->vertex "J.3")))
 (handle-action! st ron `(respond init-road ,(string->edge "J-2")))
-
 (handle-action! st dan `(respond init-settlement ,(string->vertex "F.1")))
 (handle-action! st dan `(respond init-road ,(string->edge "F-1")))
-
 (handle-action! st dan `(respond init-settlement ,(string->vertex "D.2")))
 (handle-action! st dan `(respond init-road ,(string->edge "D-1")))
-
 (handle-action! st ron `(respond init-settlement ,(string->vertex "K.2")))
 (handle-action! st ron `(respond init-road ,(string->edge "K-2")))
+
+;; trade test
+(handle-action! st ron `(offer "jerry" (grain) (grain ore)))
+(handle-action! st ron `(offer "ron" (grain) (grain ore)))
+(handle-action! st ron `(offer "dan" (grain) (wood grain)))
+(handle-action! st dan `(respond trade decline))
+(handle-action! st ron `(offer "dan" (grain ore) (wood grain)))
+(handle-action! st dan `(respond trade accept))
 
 (display (state->string st))

@@ -3,6 +3,7 @@
 (require "board.rkt" "data.rkt" "engine.rkt" "basic.rkt" "adv.rkt")
 
 (define MAX-USERS 4)
+(define TESTING #f) ;; flag used to get into a game more quickly
 
 (define st #f) ;; global state variable (initial value is a place holder)
 (define mutex (make-semaphore 0)) ;; mutex for st
@@ -13,7 +14,8 @@
 ;; produce a stock of empty resources for a user
 (define/contract (empty-stock)
   (-> stock?)
-  (make-hash (map (lambda (res) (cons res 0)) '(wood grain sheep ore clay))))
+  (make-hash (map (lambda (res) (cons res (if TESTING 5 0)))
+                  '(wood grain sheep ore clay))))
 
 ;; begins interacting with a given user on the given input/output ports
 (define/contract (run-listener parent usr init-port)
@@ -85,22 +87,55 @@
 ;; tell all users that initial settlement/road placement is starting
 (logf 'info "beginning initial settlement/road placement\n")
 
-(void (map (lambda (usr)
-  (match-define (list _ out mutex) (user-io usr))
-  (call-with-semaphore mutex (thunk
-    (send (handle-action! st usr '(show board)) out)
-    (send '(broadcast "Starting initial settlement/road placement.") out)
-    (send (list 'broadcast (format "Order is: ~a."
-      (apply string-append (add-between (map uname (state-users st)) ", "))))
-      out)
-    (send '(broadcast "Type `help` for a list of commands.") out))))
- (state-users st)))
+;; TODO: remove the TESTING block of code
+(cond
+  [TESTING 
+    (define (setl usr vtx)
+      (set-board-vertex-pair! (state-board st) (string->vertex vtx) usr
+                              'settlement))
+    (define (road usr edge)
+      (set-board-road-owner! (state-board st) (string->edge edge) usr))
 
-(call-with-semaphore (third (user-io (first (state-users st)))) (thunk
-  (send '(prompt init-settlement "Where will you place your 1st settlement?")
-        (second (user-io (first (state-users st)))))))
+    (define usrs (state-users st))
+    (setl (first usrs) "C.4")
+    (road (first usrs) "C-3")
+    (setl (first usrs) "Q.1")
+    (road (first usrs) "Q-6")
 
-(semaphore-post mutex)
+    (when (>= (length usrs) 2)
+      (setl (second usrs) "F.3")
+      (road (second usrs) "F-2")
+      (setl (second usrs) "L.4")
+      (road (second usrs) "L-3"))
+    (when (>= (length usrs) 3)
+      (setl (third usrs) "A.2")
+      (road (third usrs) "A-1")
+      (setl (third usrs) "J.3")
+      (road (third usrs) "J-3"))
+    (when (>= (length usrs) 4)
+      (setl (fourth usrs) "I.3")
+      (road (fourth usrs) "N-4")
+      (setl (fourth usrs) "O.2")
+      (road (fourth usrs) "O-2"))
+    (semaphore-post mutex)
+    (set-state-lock! st #f)]
+  [else
+    (void (map (lambda (usr)
+      (match-define (list _ out mutex) (user-io usr))
+      (call-with-semaphore mutex (thunk
+        (send (handle-action! st usr '(show board)) out)
+        (send '(broadcast "Starting initial settlement/road placement.") out)
+        (send (list 'broadcast (format "Order is: ~a."
+          (apply string-append (add-between (map uname (state-users st)) ", "))))
+          out)
+        (send '(broadcast "Type `help` for a list of commands.") out))))
+     (state-users st)))
+
+    (call-with-semaphore (third (user-io (first (state-users st)))) (thunk
+      (send '(prompt init-settlement "Where will you place your 1st settlement?")
+            (second (user-io (first (state-users st)))))))
+
+    (semaphore-post mutex)])
 
 
 (logf 'info "waiting for game over\n")

@@ -300,6 +300,24 @@
                   (list 'message (format "You can't build a road at ~a!"
                                          (edge->string (cdr edges))))])]))
 
+(define/contract (prompt-trade! st answer)
+  (-> state? (or/c 'accept 'decline) (or/c response? void?))
+  (match-define (cons give get) (rlock-var (state-lock st)))
+  (define usr (state-turnu st))
+  (define target (rlock-holder (state-lock st)))
+  (match answer
+    ['decline
+      (set-state-lock! st #f)
+      (broadcast st "~a declined ~a's offer." (uname target) (uname usr))]
+    ['accept (cond
+      [(can-afford? target get)
+        (spend-stock! usr give)
+        (give-stock! usr get)
+        (spend-stock! target get)
+        (give-stock! target give)
+        (set-state-lock! st #f)
+        (broadcast st "~a accepted ~a's offer." (uname target) (uname usr))]
+      [else (list 'message "You can't afford to accept!\n")])]))
 
 ;; -------------------------- MAJOR HELPER FUNCTIONS ---------------------------
 (define/contract (buy-item! st usr item args)
@@ -411,6 +429,27 @@
       (show st usr 'users) "\n"
       (show st usr 'veeps) "\n")]))
 
+;; send a trade offer to another player
+(define/contract (offer! st usr targetname give get)
+  (-> state? user? string? stock? stock? (or/c response? void?))
+  (define target (match (filter (compose (curry string=? targetname) user-name)
+                                (state-users st))
+                  [(cons u _) u]
+                  [_ #f]))
+  (cond
+    [(not target) (list 'message (format "~a is not a player in this game!"
+                                         targetname))]
+    [(user=? usr target) (list 'message "You can't trade with yourself!")]
+    [(not (can-afford? usr give)) (list 'message (format "You can't afford ~a!"
+                                        (stock->string give)))]
+    [else (set-state-lock! st (rlock target "decide on the trade" 'trade
+                                     (cons give get) prompt-trade!))
+          (broadcast st "~a has offered to give ~a ~a for ~a." (uname usr)
+                     (uname target) (stock->string give) (stock->string get))
+          (send-message target (list 'prompt 'trade
+            (format "Will you accept ~a's offer? Use `accept` or `decline`."
+                    (uname usr))))]))
+
 ;; ------------------------------- API FUNCTIONS -------------------------------
 ;; rlock prompt for getting an initial settlement placement
 (define/contract (init-settlement! st vtx)
@@ -497,6 +536,8 @@
         [`(buy ,item ,args) (buy-item! st usr item args)]
         [`(use ,card) (use-card! st usr card)]
         [`(bank ,res-list ,target) (bank! st usr res-list target)]
+        [`(offer ,target ,give ,get) (offer! st usr target (list->stock give)
+                                                           (list->stock get))]
         [`(end) (change-turn! st)]
         [`(show ,(or 'board 'all)) (list 'raw (show st usr (second act)))]
         [`(show ,thing) (list 'message (show st usr thing))]
