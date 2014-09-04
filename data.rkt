@@ -31,9 +31,6 @@
 (define showable? (in showables))
 (define prompt?   (in prompts))
 
-;; represents a trading post
-(define trading-post? (list/c symbol? vertex? vertex?))
-
 ;; represents the current ANSI terminal style; (bg fg bold underline)
 (define style? (list/c integer? integer? boolean? boolean?))
 
