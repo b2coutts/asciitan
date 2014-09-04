@@ -72,6 +72,7 @@
       [`(sty ,nsty ,char) (with-style sty nsty (~a char))]
       [`(rep ,amt ,code)
         (match-define (cons rst newsty) (fill-template b (list code) sty))
+        (set! sty newsty)
         (replicate amt rst)]
       [`(label ,x ,y)
         (string-append
@@ -100,6 +101,12 @@
           [#f (with-style sty '(40 37 #f #f) (~a char))]
           [(cons owner bldg)
             (with-style sty `(40 ,(user-color owner) #f #f) (bldg->str bldg))])]
+      [`(tp ,n)
+        (match-define (list res v1 v2) (list-ref trading-posts n))
+        (define pair (or (board-vertex-pair b v1) (board-vertex-pair b v2)))
+        (define str (if (equal? res 'any) "?"
+                           (substring (symbol->string res) 0 1)))
+        (with-style sty `(,(if pair (user-color (car pair)) 37) 40 #f #f) str)]
       [`(hedge ,c ,d ,s ,t ,u ,v ,x ,y)
         (define owner (board-road-owner b `((,s . ,t) . (,u . ,v))))
         (define esty `(40 ,(if owner (user-color owner) 37) #f #f))

@@ -6,7 +6,8 @@
 
          col-esc reset
 
-         board-cell-list cell-labels board-edge-list board-vertex-list)
+         trading-posts board-cell-list cell-labels board-edge-list
+         board-vertex-list)
 
 ;; list of resources
 (define resources '(wood grain sheep ore clay))
@@ -55,6 +56,17 @@
 ;; string to reset ANSI terminal mode to default
 (define reset (format "~a[37;40;22;24m" col-esc))
 
+;; list of all 9 trading posts, ordered starting from top-left, going clockwise
+(define trading-posts
+  '((sheep ((-2 . 4) (-1 . 3) (-1 . 5)) ((-1 . 3) (-1 . 5) (0 . 4)))
+    (any ((0 . 4) (1 . 3) (1 . 5)) ((1 . 3) (1 . 5) (2 . 4)))
+    (any ((2 . 2) (2 . 4) (3 . 3)) ((2 . 2) (3 . 1) (3 . 3)))
+    (clay ((2 . 0) (3 . -1) (3 . 1)) ((2 . -2) (2 . 0) (3 . -1)))
+    (wood ((1 . -3) (2 . -4) (2 . -2)) ((1 . -5) (1 . -3) (2 . -4)))
+    (any ((0 . -6) (0 . -4) (1 . -5)) ((-1 . -5) (0 . -6) (0 . -4)))
+    (grain ((-2 . -4) (-1 . -5) (-1 . -3)) ((-2 . -4) (-2 . -2) (-1 . -3)))
+    (ore ((-3 . -1) (-2 . -2) (-2 . 0)) ((-3 . -1) (-3 . 1) (-2 . 0)))
+    (any ((-3 . 1) (-3 . 3) (-2 . 2)) ((-3 . 3) (-2 . 2) (-2 . 4)))))
 
 ;; list of every cell on the board
 (define board-cell-list '(

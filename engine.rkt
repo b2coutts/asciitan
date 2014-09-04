@@ -390,13 +390,32 @@
 (define/contract (bank! st usr res-list target)
   (-> state? user? (listof resource?) resource? (or/c response? void?))
   (define cost (list->stock res-list))
+  (define posts
+    (filter-map (lambda (tp)
+              (match-define (list res v1 v2) tp)
+              (match (cons (board-vertex-pair (state-board st) v1)
+                           (board-vertex-pair (state-board st) v2))
+                [(cons (cons (app (curry user=? usr) #t) _) _) res]
+                [(cons _ (cons (app (curry user=? usr) #t) _)) res]
+                [_ #f]))
+            trading-posts))
   (cond
-    [(not (= (length res-list) 4))
-      (list 'message "You must trade 4 resources to the bank!")]
     [(not (can-afford? usr cost))
       (list 'message (format "You don't have ~a!" (stock->string cost)))]
+    [(not (member? (length res-list) '(2 3 4)))
+      (list 'message (string-append
+        "You must trade 2-4 (depending on trading posts) resources to the "
+        "bank!"))]
+    [(and (= (length res-list) 2)
+          (not (equal? (first res-list) (second res-list))))
+      (list 'message "You can't bank 2:1 with two different resources!")]
+    [(and (= (length res-list) 2) (not (member? (first res-list) posts)))
+      (list 'message (format "You need a ~a trading post to bank ~a 2:1!"
+                             (first res-list) (first res-list)))]
+    [(and (= (length res-list) 3) (not (member? 'any posts)))
+      (list 'message "You need a ? trading post to bank 3:1!")]
     [else (spend-stock! usr cost) (give-res! usr target)
-      (broadcast st "~a traded ~a for ~a[~am1 ~a~a" (uname usr)
+      (broadcast st "~a banked ~a for ~a[~am1 ~a~a" (uname usr)
                  (stock->string cost) col-esc (resource->color target)
                  target (style->string '(40 37 #f #f)))]))
 

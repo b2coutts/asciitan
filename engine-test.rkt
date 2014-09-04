@@ -29,10 +29,10 @@
 ;; --------------------------------- MAIN CODE ---------------------------------
 ;; create initial state
 ;; seed random number generator to make the test deterministic
-(random-seed 1231)
+(random-seed 1230)
 
 ;; function to avoid eq?
-(define (no-res) (make-hash (map (lambda (res) (cons res 0))
+(define (no-res) (make-hash (map (lambda (res) (cons res 5))
                                '(wood grain sheep ore clay))))
 
 (define ron (user "ron" 2 '(knight veep monopoly year-of-plenty road-building)
@@ -53,7 +53,6 @@
 
 ;; main code of interacting with the server
 (printf "~a[37m" col-esc) ;; set color to white
-(display (state->string st))
 
 ;; initial setup
 (handle-action! st ron `(respond init-settlement ,(string->vertex "J.3")))
@@ -65,12 +64,33 @@
 (handle-action! st ron `(respond init-settlement ,(string->vertex "K.2")))
 (handle-action! st ron `(respond init-road ,(string->edge "K-2")))
 
-;; trade test
-(handle-action! st ron `(offer "jerry" (grain) (grain ore)))
-(handle-action! st ron `(offer "ron" (grain) (grain ore)))
-(handle-action! st ron `(offer "dan" (grain) (wood grain)))
-(handle-action! st dan `(respond trade decline))
-(handle-action! st ron `(offer "dan" (grain ore) (wood grain)))
-(handle-action! st dan `(respond trade accept))
+
+;; trading post tests
+
+;; attempting to trade without the right trading posts
+(handle-action! st ron `(bank (wood clay) sheep))
+(handle-action! st ron `(bank (wood wood) sheep))
+(handle-action! st ron `(bank (wood clay ore) sheep))
+(handle-action! st ron `(bank (wood) sheep))
+(handle-action! st ron `(bank (wood wood wood wood wood) sheep))
+
+;; build settlements at trading posts
+(handle-action! st ron `(buy road ,(string->edge "K-1")))
+(handle-action! st ron `(buy road ,(string->edge "G-2")))
+(handle-action! st ron `(buy settlement ,(string->vertex "G.2")))
+(handle-action! st ron `(end))
+(handle-action! st dan `(buy road ,(string->edge "C-2")))
+(handle-action! st dan `(buy road ,(string->edge "C-1")))
+(handle-action! st dan `(buy settlement ,(string->vertex "C.1")))
+
+;; trade tests
+(display (state->string st))
+(handle-action! st dan `(bank (clay clay) sheep))
+(handle-action! st dan `(bank (wood clay clay) sheep))
+(handle-action! st dan `(end))
+(handle-action! st ron `(bank (sheep sheep) ore))
+(handle-action! st ron `(bank (sheep sheep sheep) ore))
+(handle-action! st ron `(bank (grain sheep) ore))
+(handle-action! st ron `(bank (grain grain) ore))
 
 (display (state->string st))
