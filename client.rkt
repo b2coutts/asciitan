@@ -10,10 +10,12 @@
 (display (style->string '(40 37 #f #f)))
 
 (printf "Welcome to asciitan!\n")
+(printf "What is the hostname or IP of the server?\n")
+(define host (read-line))
 (printf "Which port is the server running on?\n")
 (define port (read))
 (void (read-line)) ;; take trailing newline
-(define-values (srv-in srv-out) (tcp-connect "localhost" port))
+(define-values (srv-in srv-out) (tcp-connect host port))
 (file-stream-buffer-mode srv-out 'line)
 
 ;; TODO: avoid duplicate names, maybe limit name length
@@ -24,7 +26,7 @@
 (send name srv-out)
 (define listener-port (read srv-in))
 
-(define-values (listen-in listen-out) (tcp-connect "localhost" listener-port))
+(define-values (listen-in listen-out) (tcp-connect host listener-port))
 (file-stream-buffer-mode listen-out 'line)
 
 (printf "Connection established; waiting for other users to connect.\n")
