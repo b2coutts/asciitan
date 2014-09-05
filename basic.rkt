@@ -4,7 +4,7 @@
 
 (require racket/contract)
 
-(provide member? prompt in notin logf)
+(provide member? splitf-at prompt in notin logf)
 
 ;; true iff x is an element of lst
 (define/contract (member? x lst)
@@ -34,6 +34,15 @@
     [err (when (string? err) (fprintf "~a\n" err))
          (prompt msg validate in out)]
     [else input]))
+
+;; Function in Racket 6 I'm implementing here for better portability
+(define (splitf-at lst pred)
+  (match lst
+    ['() (values '() '())]
+    [(cons x xs) (cond
+      [(pred x) (define-values (ys zs) (splitf-at (rest lst) pred))
+                (values (cons x ys) zs)]
+      [else (values '() lst)])]))
 
 ;; logging function
 ;; TODO: timestamp
