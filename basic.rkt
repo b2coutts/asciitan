@@ -4,7 +4,7 @@
 
 (require racket/contract)
 
-(provide member? splitf-at prompt in notin logf)
+(provide member? splitf-at dropf prompt in notin logf)
 
 ;; true iff x is an element of lst
 (define/contract (member? x lst)
@@ -43,6 +43,14 @@
       [(pred x) (define-values (ys zs) (splitf-at (rest lst) pred))
                 (values (cons x ys) zs)]
       [else (values '() lst)])]))
+
+;; same as above
+(define (dropf lst pred)
+  (match lst
+    ['() '()]
+    [(cons x xs) (cond
+      [(pred x) (dropf xs pred)]
+      [else lst])]))
 
 ;; logging function
 ;; TODO: timestamp
