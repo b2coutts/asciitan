@@ -1,7 +1,11 @@
 ;; TODO deal with *really* long commands (for some reason)
 #lang racket
 
-(require (planet neil/charterm) racket/string racket/list)
+(require
+  (planet neil/charterm) racket/string racket/list racket/contract
+  
+  "basic.rkt" "adv.rkt" "data.rkt" "constants.rkt" "help.rkt"
+)
 
 (define (interp x) (with-input-from-string x (thunk (read))))
 
@@ -43,8 +47,32 @@
 ;; lines of console text
 (define clines '())
 
+;; get the length of a string, taking formatting escape codes into account
+(define (strlen str)
+  (define (lstlen lst)
+    (match lst
+      ['() 0]
+      [(cons (== (integer->char #x1b)) xs)
+        (lstlen (rest (mydropf xs (not/c #\m))))]
+      [(cons _ xs) (add1 (lstlen xs))]))
+  (lstlen (string->list str)))
+
+;; take a substring of a string, while respecting terminal escape codes
+(define (substr str start end)
+  (define (sublst lst start end)
+    (cond
+      [(and (zero? start) (zero? end)) '()]
+      [else (match (first lst)
+        [#\u001B
+          (match-define-values (fst (cons #\m rst)) (splitf-at lst (not/c #\m)))
+          (append fst '(#\m) (sublst rst start end))]
+        [ch (cond
+          [(zero? start) (cons ch (sublst (rest lst) 0 (sub1 end)))]
+          [else (sublst (rest lst) (sub1 start) (sub1 end))])])]))
+  (list->string (sublst (string->list str) start end)))
+
 ;; get the index of the latest #\space in a string
-(define (last-space str [idx (- (string-length str) 1)])
+(define (last-space str [idx (- (strlen str) 1)])
   (cond
     [(< idx 0) #f]
     [(char=? (string-ref str idx) #\space) idx]
@@ -52,39 +80,43 @@
 
 ;; wrap a single string to the specified number of characters
 (define (wrap-str str len)
+  (define slen (strlen str))
   (cond
-    [(<= (string-length str) len)
-      (list (string-append str (make-string (- len (string-length str))
+    [(<= slen len)
+      (list (string-append str (make-string (- len slen)
                                             #\space)))]
-    [else (match (last-space (substring str 0 len))
-      [#f (cons (substring str 0 len) (wrap-str (substring str len) len))]
-      [idx (cons (substring str 0 idx)
-                 (wrap-str (substring str (add1 idx)) len))])]))
+    [else (match (last-space (substr str 0 len))
+      [#f (cons (substr str 0 len) (wrap-str (substr str len slen) len))]
+      [idx (cons (substr str 0 idx)
+                 (wrap-str (substr str (add1 idx) slen) len))])]))
 
 ;; wraps a console message to fit in the console
 (define (wrap-msg pad str)
-  (define len (string-length pad))
+  (define len (strlen pad))
   (match-define (cons x xs) (wrap-str str (- width len 43)))
   (cons (string-append pad x)
         (map (curry string-append (list->string (make-list len #\space))) xs)))
 
 ;; refreshes/updates the console
 (define (refresh-console! [ind 0] [line (- height 1)])
-  (when (and (> line 1) (< ind (length clines)))
+  (when (< ind (length clines))
     (define strs (wrap-msg (car (list-ref clines ind))
                            (cdr (list-ref clines ind))))
-    (map (lambda (i)
-          (charterm-cursor 44 (- line i))
-          (charterm-display (list-ref strs (- (length strs) i 1))))
-         (range 0 (min (length strs) (- line 1))))
-    (refresh-console! (add1 ind) (- line (length strs)))))
+    (when (>= (- line 1) (length strs))
+      (map (lambda (i)
+            (charterm-cursor 44 (- line (length strs) (- i) -1))
+            (charterm-display (list-ref strs i)))
+           (range 0 (min (length strs) (- line 1))))
+      (refresh-console! (add1 ind) (- line (length strs))))))
 
-;; add a new line to the console, and refresh it
+;; add a new line to the console, and refresh it; str is a format string
 ;; TODO: deal with wrapping properly
-(define/contract (console! pad str)
-  (-> string? string? void?)
+(define/contract (console! pad str . args)
+  (->* (string? string?) #:rest (listof any/c) void?)
+  ;; TODO
+  (when (string=? pad "  ") (with-output-to-file "/home/b2coutts/log.txt" (thunk (write str)) #:exists 'truncate))
   (reset-colors)
-  (set! clines (cons (cons pad str) clines))
+  (set! clines (cons (cons pad (apply (curry format str) args)) clines))
   (refresh-console!)
   (cursor-input))
 
@@ -105,7 +137,7 @@
   (-> string? void?)
   (charterm-cursor 1 1)
   (charterm-display (format "~a[30;47m~a~a" (integer->char #x1b) str
-                      (make-string (- width (string-length str)) #\space)))
+                      (make-string (- width (strlen str)) #\space)))
   (cursor-input))
 
 ;; draws the middle | separator
@@ -138,10 +170,102 @@
   (charterm-display (format "~a[37;40m" (integer->char #x1b))))
 
 ;; ------------------------ END OF UI MANIPULATION CODE ------------------------
-;; TODO: implement this properly
-(define (user-cmd str)
-  (when (string=? str "really-quit") (exit))
-  (console! "$ " str))
+;; parse a line of user input
+(define/contract (parse str)
+  (-> string? (listof string?))
+  (define lst (string->list str))
+  (cond
+    [(empty? lst) '()]
+    [else (define-values (x xs) (mysplitf-at lst (not/c (or/c #\tab #\space))))
+          (cons (list->string x)
+                (parse (list->string (mydropf xs (or/c #\tab #\space)))))]))
+
+(define ss string->symbol)
+
+;; function for interpreting user input. If a message needs to be sent to the
+;; server as a result, returns the message; otherwise, returns (void)
+(define/contract (user-cmd str)
+  (-> string? any/c)
+  (define req (match (parse str)
+    ;; prompt responses
+    [`("move" ,cstr) (define cell (label->cell (ss cstr)))
+      (cond [cell `(respond move-thief ,cell)]
+            [else (console! "! " "invalid cell: ~a" cstr)])]
+    [`("take" ,res) (cond
+      [(resource? (ss res)) `(respond monopoly ,(ss res))]
+      [else (console! "! " "invalid resource: ~a" res)])]
+    [`("choose" ,r1 ,r2) (cond
+      [(not (resource? (ss r1))) (console! "! " "invalid resource: ~a" r1)]
+      [(not (resource? (ss r2))) (console! "! " "invalid resource: ~a" r2)]
+      [else `(respond year-of-plenty ,(cons (ss r1) (ss r2)))])]
+    [`("build" ,e1 ,e2) (match (cons (string->edge e1) (string->edge e2))
+      [(cons #f _) (console! "! " "invalid edge: ~a" e1)]
+      [(cons _ #f) (console! "! " "invalid edge: ~a" e2)]
+      [edgs `(respond road-building ,edgs)])]
+    [(cons "discard" rlist)
+      (match (filter-not (compose resource? ss) rlist)
+        [(cons str _) (console! "! " "invalid resource: ~a" str)]
+        [_ `(respond discard-resources ,(map ss rlist))])]
+    ;; TODO: validate the username
+    [`("steal" ,usr) `(respond pick-target ,usr)]
+    [`("place" "road" ,estr) (match (string->edge estr)
+      [#f (console! "! " "invalid edge: ~a" estr)]
+      [edg `(respond init-road ,edg)])]
+    [`("place" "settlement" ,vstr) (match (string->vertex vstr)
+      [#f (console! "! " "invalid vertex: ~a" vstr)]
+      [vtx `(respond init-settlement ,vtx)])]
+    [(cons "offer" (cons target ress)) (cond
+      [(not (member? "for" ress))
+        (console! "! " "Usage: ~a" (car (help-cmd '(offer))))]
+      [else
+        (match-define-values (give (cons "for" get))
+                             (mysplitf-at ress (not/c "for")))
+        (match (filter (not/c (compose resource? ss)) (append give get))
+          [(cons str _) (console! "! " "invalid resource: ~a" str)]
+          ['() `(offer ,target ,(map ss give) ,(map ss get))])])]
+    ['("accept") '(respond trade accept)]
+    ['("decline") '(respond trade decline)]
+
+    [(cons "help" args) (match (help-cmd (map ss args))
+      [(cons usage details)
+        (console! "! " "Usage: ~a" usage)
+        (console! "  " details)]
+      [info (console! "! " "~a" info)])]
+    [`("buy" "dev-card") `(buy dev-card)]
+    [`("buy" "road" ,edg) (cond
+      [(not (string->edge edg))
+        (console! "! " "invalid edge: ~a" edg)]
+      [else `(buy road ,(string->edge edg))])]
+    [`("buy" ,item ,vtx) (cond
+      [(not (building? (ss item)))
+        (console! "! " "invalid usage of buy")]
+      [(not (string->vertex vtx))
+        (console! "! " "invalid vertex: ~a" vtx)]
+      [else `(buy ,(ss item) ,(string->vertex vtx))])]
+    [`("use" ,card) (match (ss card)
+      [(? dev-card? dc) `(use ,dc)]
+      [_ (console! "! " "not a dev card: ~a" card)])]
+    [(cons "bank" (cons target lst))
+      (define err (ormap (lambda (res) (cond
+                          [(resource? (ss res)) #f]
+                          [else (console! "! " "invalid resource: ~a" res)]))
+                         (cons target lst)))
+      (if err (void)
+        `(bank ,(map ss lst) ,(ss target)))]
+    [`("end") '(end)]
+    [`("show" ,thing) (cond
+      [(showable? (ss thing)) `(show ,(ss thing))]
+      [else (console! "! " "invalid thing to show: ~a" thing)])]
+    [(cons "say" _) `(say ,(if (< (string-length str) 4)
+                               "" (substring str 4)))]
+    [(cons cmd args) (cond
+      [(or (command? (ss cmd)) (member? (ss cmd) client-commands))
+        (console! "! " "Usage: ~a" (car (help-cmd (list (ss cmd)))))]
+      [else (console! "! " "invalid command: ~a" cmd)])]
+    [_ (console! "! " "badly formatted request: ~a" str)]))
+  (when (not (void? req))
+    (fprintf game-out "~s\n" req)))
+    
 
 (charterm-clear-screen)
 (clear-prompt)
@@ -153,6 +277,8 @@
   (match (sync (wrap-evt (current-charterm) (curry cons 'user))
                (wrap-evt (read-line-evt game-in 'any) (curry cons 'server)))
     [(cons 'user _) (match (charterm-read-key)
+      ;; TODO: deal with non-printable characters
+      ;; TODO: ctrl-w
       ['return
         (unless (empty? input)
           (user-cmd (list->string (reverse input)))

@@ -10,7 +10,7 @@
   "Available commands: "
   ,@(add-between (map ~a (remove 'respond (append commands client-commands)))
                  " ")
-  "\nType `help command` for detailed info on a single command.")))
+  ". Type `help command` for detailed info on a single command.")))
 
 ;; helper function to construct usage and detailed info
 (define/contract (mkinfo usage . details)
@@ -26,19 +26,19 @@
     
     ;; commands
     ['(buy road) (mkinfo "buy road edge"
-      (format "Cost: ~a\n" (stock->string (hash-ref item-prices 'road)))
+      (format "Cost: ~a. " (stock->string (hash-ref item-prices 'road)))
       "Build a road at edge. See `help edge` for info on how to input an "
       "edge.")]
     ['(buy city) (mkinfo "buy city vertex"
-      (format "Cost: ~a\n" (stock->string (hash-ref item-prices 'city)))
+      (format "Cost: ~a. " (stock->string (hash-ref item-prices 'city)))
       "Build a city at vertex. See `help vertex` for info on how to input a "
       "vertex.")]
     ['(buy settlement) (mkinfo "buy settlement vertex"
-      (format "Cost: ~a\n" (stock->string (hash-ref item-prices 'settlement)))
+      (format "Cost: ~a. " (stock->string (hash-ref item-prices 'settlement)))
       "Build a settlement at vertex. See `help vertex` for info on how to "
       "input a vertex.")]
     ['(buy dev-card) (mkinfo "buy dev-card"
-      (format "Cost: ~a\n" (stock->string (hash-ref item-prices 'dev-card)))
+      (format "Cost: ~a. " (stock->string (hash-ref item-prices 'dev-card)))
       "Buy a development card. Use `help card-name` for info on a specific "
       "card")]
     [(cons 'buy _) (mkinfo "buy item [place]"
@@ -53,7 +53,7 @@
     [(cons 'end _) (mkinfo "end"
       "End your turn.")]
     [(cons 'offer _) (mkinfo "offer user give1 give2 ... for take1 take2 ..."
-      "Example: offer jerry clay clay ore for sheep sheep grain wood\n"
+      "Example: offer jerry clay clay ore for sheep sheep grain wood. "
       "Offers a trade to another user. give1, give2, ... are the resources you "
       "are offering, and take1, take2, ... are the resources you want.")]
     [(cons 'show _) (mkinfo "show thing"
