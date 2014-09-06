@@ -38,6 +38,8 @@
 ;; Setup UI
 (open-charterm)
 (define-values (width height) (charterm-screen-size))
+(when (or (not height) (< height 24)) (set! height 24))
+(when (or (not width) (< width 80)) (set! width 80))
 
 ;; ---------------------- UI MANIPULATION CODE ----------------------
 ;; sets the current charterm style
@@ -136,12 +138,11 @@
   (cursor-input))
 
 ;; sets the text in the status bar
-;; TODO: deal with really long statuses?
 (define/contract (set-status str)
   (-> string? void?)
   (charterm-cursor 1 1)
-  (charterm-display
-    (format "\e[37;40m~a~a" str (make-string (- width (strlen str)) #\space)))
+  (charterm-style '(37 40 #f #f))
+  (safe-display width str)
   (cursor-input))
 
 ;; draws the middle | separator
@@ -164,9 +165,10 @@
 (define/contract (clear-prompt)
   (-> void?)
   (charterm-cursor 1 height)
-  (charterm-clear-line)
   (charterm-style '(37 44 #f #f))
-  (charterm-display "> "))
+  (charterm-clear-line)
+  (charterm-display (format ">~a" (make-string (sub1 width) #\space)))
+  (charterm-cursor 3 height))
 
 ;; display a string of text at the cursor, cutting it off at n characters
 (define/contract (safe-display n str)
@@ -184,6 +186,26 @@
     (safe-display 41 str)
     (cursor-input)))
 
+;; reprint the entire screen
+(define/contract (reprint-screen)
+  (-> void?)
+  (charterm-clear-screen)
+  (fprintf game-out "~s\n" '(request-update))
+  (draw-separator)
+  (clear-prompt)
+  (refresh-console!))
+
+;; check if the terminal has resized; if so, adjust the UI
+(define/contract (handle-resize!)
+  (-> void?)
+  (define-values (new-width new-height) (charterm-screen-size))
+  (when (or (not new-width) (< new-width 80)) (set! new-height 80))
+  (when (or (not new-height) (< new-height 24)) (set! new-height 24))
+  (unless (and (equal? height new-height) (equal? width new-width))
+    (set! height new-height)
+    (set! width new-width)
+    (reprint-screen)))
+    
 
 ;; ------------------------ END OF UI MANIPULATION CODE ------------------------
 ;; parse a line of user input
@@ -291,8 +313,10 @@
 (clear-prompt)
 
 (define (loop)
-  (match (sync (wrap-evt (current-charterm) (curry cons 'user))
-               (wrap-evt (read-line-evt game-in 'any) (curry cons 'server)))
+  (define evt (sync/timeout 0.5 (wrap-evt (current-charterm) (curry cons 'user))
+                  (wrap-evt (read-line-evt game-in 'any) (curry cons 'server))))
+  (handle-resize!)
+  (match evt
     [(cons 'user _) (match (charterm-read-key)
       ['return
         (unless (empty? input)
@@ -326,6 +350,7 @@
       [`(update status ,sstr) (set-status sstr)]
       [`(raw ,_) (error "client received raw")]
       ;; TODO: return terminal to normal?
-      [`(game-over) (exit)])])
+      [`(game-over) (exit)])]
+    [#f (void)])
   (loop))
 (loop)

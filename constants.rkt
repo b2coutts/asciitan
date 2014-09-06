@@ -31,7 +31,7 @@
 (define items '(city settlement dev-card road))
 
 ;; list of valid commands to the server
-(define commands '(buy use bank end show respond say offer))
+(define commands '(buy use bank end show respond say offer request-update))
 
 ;; list of client-only commands (i.e., ones which get translated to respond)
 (define client-commands '(move discard steal help take choose build place accept

@@ -58,9 +58,9 @@
        (state-users st))
   (void))
 
-;; send updated state to all users
+;; send updated state to a list of users (all users if no list is given)
 ;; TODO: maybe only call this function when it needs to be called
-(define/contract (send-updates st)
+(define/contract (send-updates st [usrs (state-users st)])
   (-> state? void?)
   (define sstr (status-message st))
   (define brd (board->string (state-board st)))
@@ -73,7 +73,7 @@
   (map (lambda (usr)
         (define res (stock->string (user-res usr)))
         (send-message usr `(update all ,brd ,sstr ,res ,veeps)))
-       (state-users st))
+       usrs)
   (void))
 
 ;; gets a status message to be sent to the clients
@@ -596,6 +596,7 @@
         ;; TODO: rework show
         [`(show board) `(update board ,(show st usr 'board))]
         [`(show ,thing) (list 'message (show st usr thing))]
+        [`(request-update) (send-updates (list usr))]
         [`(say ,msg) (void (map (curryr send-message `(say ,(uname usr) ,msg))
                                 (state-users st)))]
         [`(respond ,type ,resp) (match (state-lock st)
