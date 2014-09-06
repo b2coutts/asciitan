@@ -276,8 +276,6 @@
   (match (sync (wrap-evt (current-charterm) (curry cons 'user))
                (wrap-evt (read-line-evt game-in 'any) (curry cons 'server)))
     [(cons 'user _) (match (charterm-read-key)
-      ;; TODO: deal with non-printable characters
-      ;; TODO: ctrl-w
       ['return
         (unless (empty? input)
           (user-cmd (list->string (reverse input)))
@@ -293,8 +291,9 @@
         (set! input (mydropf (mydropf input (or/c #\space)) (not/c #\space)))
         (cursor-input)
         (charterm-clear-line-right)]
-      [ch (charterm-display (~a ch))
-          (set! input (cons ch input))])]
+      [(? char? ch) (charterm-display (~a ch))
+                    (set! input (cons ch input))]
+      [_ (void)])]
     [(cons 'server msg) (match (interp msg)
       [`(broadcast ,msg) (console! "* " msg)]
       [`(message ,msg) (console! "? " msg)]
