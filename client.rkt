@@ -289,6 +289,10 @@
           (charterm-display " ")
           (charterm-cursor (+ (length input) 2) height)
           (set! input (rest input)))]
+      ['ctrl-w
+        (set! input (mydropf (mydropf input (or/c #\space)) (not/c #\space)))
+        (cursor-input)
+        (charterm-clear-line-right)]
       [ch (charterm-display (~a ch))
           (set! input (cons ch input))])]
     [(cons 'server msg) (match (interp msg)
