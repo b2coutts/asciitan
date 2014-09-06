@@ -1,7 +1,7 @@
-asciitan is still under heavy development. In particular, the following things
-do not work:
-
-    - Longest road/Largest army
+asciitan is under development. Recently, the UI is overhauled; some
+tweaks/bugfixes to the new UI are still ocurring. The game functionality is
+almost entirely implemented, however, longest road and largest army are not yet
+implemented.
 
 To run asciitan, run `racket catan-server.rkt` to start up the server. Then,
 have each player run `racket client.rkt`; when it asks for a port, provide the
