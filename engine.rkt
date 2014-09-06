@@ -91,13 +91,16 @@
       (apply append
         (hash-map (board-cells b) (lambda (cell num-res)
           (define res (cdr num-res))
-          (if (or (equal? res 'desert) (not (= (car num-res) roll)))  '()
-            (apply append
-              (filter-map (lambda (vtx) (match (board-vertex-pair b vtx)
-                            [(cons (== usr) 'city) (list res res)]
-                            [(cons (== usr) 'settlement) (list res)]
-                            [_ #f]))
-                      (adj-vertices cell)))))))))
+          (if (or (equal? res 'desert)
+                  (not (= (car num-res) roll))
+                  (equal? cell (board-thief b)))
+              '()
+              (apply append
+                (filter-map (lambda (vtx) (match (board-vertex-pair b vtx)
+                              [(cons (== usr) 'city) (list res res)]
+                              [(cons (== usr) 'settlement) (list res)]
+                              [_ #f]))
+                        (adj-vertices cell)))))))))
     (broadcast st "~a gets ~a." (uname usr) (stock->string stock-gain))
     (give-stock! usr stock-gain))
    (state-users st))
