@@ -38,7 +38,7 @@
                           decline))
 
 ;; list of commands which a player can use when it is not their turn
-(define icommands '(show say respond))
+(define icommands '(show say respond request-update))
 
 ;; list of showable things (i.e., valid arguments to show)
 (define showables '(turn veeps board resources users dev-cards))

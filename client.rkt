@@ -112,6 +112,7 @@
     (when (>= (- line 1) (length strs))
       (map (lambda (i)
             (charterm-cursor 44 (- line (length strs) (- i) -1))
+            (charterm-style '(37 40 #f #f))
             (charterm-clear-line-right)
             (charterm-display (list-ref strs i)))
            (range 0 (min (length strs) (- line 1))))
@@ -193,7 +194,8 @@
   (fprintf game-out "~s\n" '(request-update))
   (draw-separator)
   (clear-prompt)
-  (refresh-console!))
+  (refresh-console!)
+  (cursor-input))
 
 ;; check if the terminal has resized; if so, adjust the UI
 (define/contract (handle-resize!)

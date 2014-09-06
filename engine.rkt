@@ -61,7 +61,7 @@
 ;; send updated state to a list of users (all users if no list is given)
 ;; TODO: maybe only call this function when it needs to be called
 (define/contract (send-updates st [usrs (state-users st)])
-  (-> state? void?)
+  (->* (state?) ((listof user?)) void?)
   (define sstr (status-message st))
   (define brd (board->string (state-board st)))
   (define veeps
@@ -596,7 +596,7 @@
         ;; TODO: rework show
         [`(show board) `(update board ,(show st usr 'board))]
         [`(show ,thing) (list 'message (show st usr thing))]
-        [`(request-update) (send-updates (list usr))]
+        [`(request-update) (send-updates st (list usr))]
         [`(say ,msg) (void (map (curryr send-message `(say ,(uname usr) ,msg))
                                 (state-users st)))]
         [`(respond ,type ,resp) (match (state-lock st)
