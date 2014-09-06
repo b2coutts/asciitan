@@ -38,7 +38,11 @@
         (define req (with-input-from-string line (thunk (read))))
         (logf 'debug "listener ~a received request ~s\n" (user-name usr) req)
         (define response
-          (call-with-semaphore mutex (thunk (handle-action! st usr req))))
+          (call-with-semaphore mutex
+            (thunk (define resp (handle-action! st usr req))
+                   (update-board! st)
+                   (update-status! st)
+                   resp)))
         (logf 'debug "listener responding with ~s\n" response)
         (cond
           [(equal? response '(game-over)) (thread-send main-thread 'game-over)]

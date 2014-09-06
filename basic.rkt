@@ -54,7 +54,7 @@
 
 ;; logging function
 ;; TODO: timestamp
-(define printable '(info))
+(define printable '(info debug))
 (define logf-mutex (make-semaphore 1))
 (define/contract (logf type fstr . args)
   (->* ((or/c 'debug 'info) string?) () #:rest (listof any/c) void?)

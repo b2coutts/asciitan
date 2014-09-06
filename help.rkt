@@ -17,6 +17,8 @@
   (->* (string?) #:rest (listof string?) (cons/c string? string?))
   (cons usage (apply string-append details)))
 
+(define sa string-append) ;; to make my life easier
+
 ;; produces info for the given command
 (define/contract (help-cmd cmd)
   (-> (listof symbol?) (or/c (cons/c string? string?) string?))
@@ -93,14 +95,14 @@
       "When prompted, declines a trade offer.")]
 
     ;; cell/edge/vertex format info
-    [(cons 'cell _) "To specify a cell, use the bold uppercase letter in its "
-      "top-left corner on the map."]
-    [(cons 'edge _) "An edge is specified with the format Z-n, where Z is an "
-      "adjacent cell (see `help cell`), and n (in [1-6]) specifies its edge as "
-      "follows: the top edge is 1, go clockwise from there."]
-    [(cons 'vertex _) "A vertex is specified with the format Z.n, where Z is "
-      "an adjacent cell (see `help cell`), and n (in [1-6]) specifies its "
-      "vertex as follows: the top-left vertex is 1, go clockwise from there."]
+    [(cons 'cell _) (sa "To specify a cell, use the bold uppercase letter in "
+      "its top-left corner on the map.")]
+    [(cons 'edge _) (sa "An edge is specified with the format Z-n, where Z is "
+      "an adjacent cell (see `help cell`), and n (in [1-6]) specifies its edge "
+      "as follows: the top edge is 1, go clockwise from there.")]
+    [(cons 'vertex _) (sa "A vertex is specified with the format Z.n, where Z "
+      "is an adjacent cell (see `help cell`), and n (in [1-6]) specifies its "
+      "vertex as follows: the top-left vertex is 1, go clockwise from there.")]
 
     ;; development card info
     [`(knight) (mkinfo "Development card: knight"

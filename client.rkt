@@ -33,7 +33,7 @@
 (printf "Connection established; waiting for other users to connect.\n")
 
 ;; wait for initial state data
-(match-define `(raw ,init-board)
+(match-define `(update board ,init-board)
   (interp (sync (read-line-evt game-in 'any))))
 
 ;; Setup UI
@@ -105,6 +105,7 @@
     (when (>= (- line 1) (length strs))
       (map (lambda (i)
             (charterm-cursor 44 (- line (length strs) (- i) -1))
+            (charterm-clear-line-right)
             (charterm-display (list-ref strs i)))
            (range 0 (min (length strs) (- line 1))))
       (refresh-console! (add1 ind) (- line (length strs))))))
@@ -113,8 +114,6 @@
 ;; TODO: deal with wrapping properly
 (define/contract (console! pad str . args)
   (->* (string? string?) #:rest (listof any/c) void?)
-  ;; TODO
-  (when (string=? pad "  ") (with-output-to-file "/home/b2coutts/log.txt" (thunk (write str)) #:exists 'truncate))
   (reset-colors)
   (set! clines (cons (cons pad (apply (curry format str) args)) clines))
   (refresh-console!)
@@ -136,8 +135,8 @@
 (define/contract (set-status str)
   (-> string? void?)
   (charterm-cursor 1 1)
-  (charterm-display (format "~a[30;47m~a~a" (integer->char #x1b) str
-                      (make-string (- width (strlen str)) #\space)))
+  (charterm-display
+    (format "\e[37;40m~a~a" str (make-string (- width (strlen str)) #\space)))
   (cursor-input))
 
 ;; draws the middle | separator
@@ -297,7 +296,8 @@
       [`(message ,msg) (console! "? " msg)]
       [`(prompt ,_ ,msg) (console! "> " msg)]
       [`(say ,name ,msg) (console! (format "~a: " name) msg)]
-      [`(raw ,brd) (update-board! (string-split brd "\n"))] ;; TODO: raw => update
+      [`(update board ,brd) (update-board! (string-split brd "\n"))]
+      [`(update status ,sstr) (set-status sstr)]
       [`(raw ,_) (error "client received raw")]
       ;; TODO: return terminal to normal?
       [`(game-over) (exit)])])

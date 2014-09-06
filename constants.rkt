@@ -41,10 +41,10 @@
 (define icommands '(show say respond))
 
 ;; list of showable things (i.e., valid arguments to show)
-(define showables '(turn veeps board resources users dev-cards all))
+(define showables '(turn veeps board resources users dev-cards))
 
 ;; list of valid response types (from the server to the client)
-(define responses '(broadcast message raw say prompt game-over))
+(define responses '(broadcast message update say prompt game-over))
 
 ;; list of requests with which the user can be prompted
 (define prompts '(move-thief discard-resources pick-target monopoly

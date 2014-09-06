@@ -3,7 +3,7 @@
 
 (require "board.rkt" "cell.rkt" "basic.rkt" "data.rkt" "constants.rkt" "adv.rkt")
 
-(provide init-state handle-action!)
+(provide init-state handle-action! update-board! update-status!)
 
 ;; -------------------------- SMALL HELPER FUNCTIONS --------------------------
 ;; give a user an (possibly negative) amount of victory points
@@ -52,10 +52,34 @@
 (define/contract (send-start-message st)
   (-> state? void?)
   (map (lambda (usr)
-        (send-message usr (list 'broadcast "The game is starting."))
-        (send-message usr (handle-action! st usr '(show all))))
+        (send-message usr (list 'broadcast "The game is starting.")))
+        ;; TODO: send state updates here
+        ;; (send-message usr (handle-action! st usr '(show all))))
        (state-users st))
   (void))
+
+;; send updated board to all users
+;; TODO: do something with these functions or remove them
+(define/contract (update-board! st)
+  (-> state? void?)
+  (map (curryr send-message `(update board ,(board->string (state-board st))))
+       (state-users st))
+  (void))
+
+;; send updated status to all users
+(define/contract (update-status! st)
+  (-> state? void?)
+  (define turnstr (format "It's ~a's turn. " (uname (state-turnu st))))
+  (define sstr (match (state-lock st)
+    [(rlock usr act (or 'init-settlement 'init-road) _ _)
+      (format "Waiting for ~a to ~a." (uname usr) act)]
+    [(rlock usr act _ _ _)
+      (format "~aWaiting for ~a to ~a." turnstr (uname usr) act)]
+    [#f turnstr]))
+  (logf 'debug "update-status! sstr is ~s\n" sstr)
+  (map (curryr send-message `(update status ,sstr)) (state-users st))
+  (void))
+
 
 ;; --------------------------- BIG HELPER FUNCTIONS ---------------------------
 ;; given a roll number, give players their earned resources
@@ -420,6 +444,7 @@
                  target (style->string '(40 37 #f #f)))]))
 
 ;; produce a string of info about a thing
+;; TODO: remove all?
 (define/contract (show st usr thing)
   (-> state? user? showable? string?)
   (match thing
@@ -558,7 +583,8 @@
         [`(offer ,target ,give ,get) (offer! st usr target (list->stock give)
                                                            (list->stock get))]
         [`(end) (change-turn! st)]
-        [`(show ,(or 'board 'all)) (list 'raw (show st usr (second act)))]
+        ;; TODO: rework show
+        [`(show board) `(update board ,(show st usr 'board))]
         [`(show ,thing) (list 'message (show st usr thing))]
         [`(say ,msg) (void (map (curryr send-message `(say ,(uname usr) ,msg))
                                 (state-users st)))]
