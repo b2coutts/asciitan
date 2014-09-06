@@ -310,7 +310,7 @@
 (draw-separator)
 (update-board! (string-split brd "\n"))
 (set-status sstr)
-(board-line 1 res)
+(board-line 1 (if (string=? (substring res 0 7) "nothing") "No resources." res))
 (board-line 2 (format "VPs: ~a" veeps))
 (clear-prompt)
 
@@ -346,7 +346,9 @@
       [`(update all ,brd ,sstr ,res ,veeps)
         (update-board! (string-split brd "\n"))
         (set-status sstr)
-        (board-line 1 res)
+        (board-line 1 (if (string=? (substring res 0 7) "nothing")
+                          "No resources."
+                          res))
         (board-line 2 (format "VPs: ~a" veeps))]
       [`(update board ,brd) (update-board! (string-split brd "\n"))]
       [`(update status ,sstr) (set-status sstr)]
