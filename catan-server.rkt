@@ -40,8 +40,7 @@
         (define response
           (call-with-semaphore mutex
             (thunk (define resp (handle-action! st usr req))
-                   (update-board! st)
-                   (update-status! st)
+                   (send-updates st)
                    resp)))
         (logf 'debug "listener responding with ~s\n" response)
         (cond
@@ -124,10 +123,10 @@
     (semaphore-post mutex)
     (set-state-lock! st #f)]
   [else
+    (send-updates st)
     (void (map (lambda (usr)
       (match-define (list _ out mutex) (user-io usr))
       (call-with-semaphore mutex (thunk
-        (send (handle-action! st usr '(show board)) out)
         (send '(broadcast "Starting initial settlement/road placement.") out)
         (send (list 'broadcast (format "Order is: ~a."
           (apply string-append (add-between (map uname (state-users st)) ", "))))
@@ -136,7 +135,8 @@
      (state-users st)))
 
     (call-with-semaphore (third (user-io (first (state-users st)))) (thunk
-      (send '(prompt init-settlement "Where will you place your 1st settlement?")
+      (send '(prompt init-settlement
+          "Where will you place your 1st settlement? Use the `place` command.")
             (second (user-io (first (state-users st)))))))
 
     (semaphore-post mutex)])

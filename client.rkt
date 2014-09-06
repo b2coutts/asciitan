@@ -32,8 +32,7 @@
 (file-stream-buffer-mode game-out 'line)
 (printf "Connection established; waiting for other users to connect.\n")
 
-;; wait for initial state data
-(match-define `(update board ,init-board)
+(match-define `(update all ,brd ,sstr ,res ,veeps)
   (interp (sync (read-line-evt game-in 'any))))
 
 ;; Setup UI
@@ -41,6 +40,11 @@
 (define-values (width height) (charterm-screen-size))
 
 ;; ---------------------- UI MANIPULATION CODE ----------------------
+;; sets the current charterm style
+(define/contract (charterm-style sty)
+  (-> style? void?)
+  (charterm-display (style->string sty)))
+
 ;; (reversed) bottom line of user's text input
 (define input '())
 
@@ -52,7 +56,7 @@
   (define (lstlen lst)
     (match lst
       ['() 0]
-      [(cons (== (integer->char #x1b)) xs)
+      [(cons #\u001B xs)
         (lstlen (rest (mydropf xs (not/c #\m))))]
       [(cons _ xs) (add1 (lstlen xs))]))
   (lstlen (string->list str)))
@@ -62,9 +66,11 @@
   (define (sublst lst start end)
     (cond
       [(and (zero? start) (zero? end)) '()]
+      [(empty? lst) '()]
       [else (match (first lst)
         [#\u001B
-          (match-define-values (fst (cons #\m rst)) (splitf-at lst (not/c #\m)))
+          (match-define-values (fst (cons #\m rst))
+                               (mysplitf-at lst (not/c #\m)))
           (append fst '(#\m) (sublst rst start end))]
         [ch (cond
           [(zero? start) (cons ch (sublst (rest lst) 0 (sub1 end)))]
@@ -83,8 +89,7 @@
   (define slen (strlen str))
   (cond
     [(<= slen len)
-      (list (string-append str (make-string (- len slen)
-                                            #\space)))]
+      (list (string-append str (make-string (- len slen) #\space)))]
     [else (match (last-space (substr str 0 len))
       [#f (cons (substr str 0 len) (wrap-str (substr str len slen) len))]
       [idx (cons (substr str 0 idx)
@@ -114,7 +119,7 @@
 ;; TODO: deal with wrapping properly
 (define/contract (console! pad str . args)
   (->* (string? string?) #:rest (listof any/c) void?)
-  (reset-colors)
+  (charterm-style '(37 40 #f #f))
   (set! clines (cons (cons pad (apply (curry format str) args)) clines))
   (refresh-console!)
   (cursor-input))
@@ -123,7 +128,7 @@
 ;; TODO: handle other state updates from server
 (define/contract (update-board! lines)
   (-> (listof string?) void?)
-  (reset-colors)
+  (charterm-style '(37 40 #f #f))
   (map (lambda (ind)
         (charterm-cursor 1 (+ ind 2))
         (charterm-display (list-ref lines ind)))
@@ -142,7 +147,7 @@
 ;; draws the middle | separator
 (define/contract (draw-separator)
   (-> void?)
-  (reset-colors)
+  (charterm-style '(37 40 #f #f))
   (map (lambda (row)
         (charterm-cursor 42 row)
         (charterm-display "|"))
@@ -153,20 +158,32 @@
 (define/contract (cursor-input)
   (-> void?)
   (charterm-cursor (+ (length input) 3) height)
-  (charterm-display (format "~a[37;44m" (integer->char #x1b))))
+  (charterm-style '(37 44 #f #f)))
 
 ;; clears the input prompt line
 (define/contract (clear-prompt)
   (-> void?)
   (charterm-cursor 1 height)
-  (charterm-display (format "~a[37;44m>~a" (integer->char #x1b)
-                      (make-string (- width 1) #\space)))
-  (charterm-cursor 3 height))
+  (charterm-clear-line)
+  (charterm-style '(37 44 #f #f))
+  (charterm-display "> "))
 
-;; sets the terminal colours back to default
-(define/contract (reset-colors)
-  (-> void?)
-  (charterm-display (format "~a[37;40m" (integer->char #x1b))))
+;; display a string of text at the cursor, cutting it off at n characters
+(define/contract (safe-display n str)
+  (-> integer? string? void?)
+  (charterm-display (substr str 0 n)))
+
+;; places a line of text n lines below the board, if there's room
+(define/contract (board-line n str)
+  (-> integer? string? void?)
+  (when (<= n (- height 24))
+    (charterm-style '(37 40 #f #f))
+    (charterm-cursor 41 (+ 23 n))
+    (charterm-clear-line-left)
+    (charterm-cursor 1 (+ 23 n))
+    (safe-display 41 str)
+    (cursor-input)))
+
 
 ;; ------------------------ END OF UI MANIPULATION CODE ------------------------
 ;; parse a line of user input
@@ -265,12 +282,13 @@
   (when (not (void? req))
     (fprintf game-out "~s\n" req)))
     
-
 (charterm-clear-screen)
-(clear-prompt)
 (draw-separator)
-(set-status "foo")
-(update-board! (string-split init-board "\n"))
+(update-board! (string-split brd "\n"))
+(set-status sstr)
+(board-line 1 res)
+(board-line 2 (format "VPs: ~a" veeps))
+(clear-prompt)
 
 (define (loop)
   (match (sync (wrap-evt (current-charterm) (curry cons 'user))
@@ -299,6 +317,11 @@
       [`(message ,msg) (console! "? " msg)]
       [`(prompt ,_ ,msg) (console! "> " msg)]
       [`(say ,name ,msg) (console! (format "~a: " name) msg)]
+      [`(update all ,brd ,sstr ,res ,veeps)
+        (update-board! (string-split brd "\n"))
+        (set-status sstr)
+        (board-line 1 res)
+        (board-line 2 (format "VPs: ~a" veeps))]
       [`(update board ,brd) (update-board! (string-split brd "\n"))]
       [`(update status ,sstr) (set-status sstr)]
       [`(raw ,_) (error "client received raw")]

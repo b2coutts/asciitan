@@ -3,7 +3,7 @@
 
 (require "board.rkt" "cell.rkt" "basic.rkt" "data.rkt" "constants.rkt" "adv.rkt")
 
-(provide init-state handle-action! update-board! update-status!)
+(provide init-state handle-action! send-updates)
 
 ;; -------------------------- SMALL HELPER FUNCTIONS --------------------------
 ;; give a user an (possibly negative) amount of victory points
@@ -58,27 +58,34 @@
        (state-users st))
   (void))
 
-;; send updated board to all users
-;; TODO: do something with these functions or remove them
-(define/contract (update-board! st)
+;; send updated state to all users
+;; TODO: maybe only call this function when it needs to be called
+(define/contract (send-updates st)
   (-> state? void?)
-  (map (curryr send-message `(update board ,(board->string (state-board st))))
+  (define sstr (status-message st))
+  (define brd (board->string (state-board st)))
+  (define veeps
+    (apply string-append
+      (add-between
+        (map (lambda (usr) (format "~a (~a)" (uname usr) (user-veeps usr)))
+             (sort (state-users st) > #:key user-veeps))
+        ", ")))
+  (map (lambda (usr)
+        (define res (stock->string (user-res usr)))
+        (send-message usr `(update all ,brd ,sstr ,res ,veeps)))
        (state-users st))
   (void))
 
-;; send updated status to all users
-(define/contract (update-status! st)
-  (-> state? void?)
+;; gets a status message to be sent to the clients
+(define/contract (status-message st)
+  (-> state? string?)
   (define turnstr (format "It's ~a's turn. " (uname (state-turnu st))))
-  (define sstr (match (state-lock st)
+  (match (state-lock st)
     [(rlock usr act (or 'init-settlement 'init-road) _ _)
       (format "Waiting for ~a to ~a." (uname usr) act)]
     [(rlock usr act _ _ _)
       (format "~aWaiting for ~a to ~a." turnstr (uname usr) act)]
     [#f turnstr]))
-  (logf 'debug "update-status! sstr is ~s\n" sstr)
-  (map (curryr send-message `(update status ,sstr)) (state-users st))
-  (void))
 
 
 ;; --------------------------- BIG HELPER FUNCTIONS ---------------------------
