@@ -72,7 +72,7 @@
         ", ")))
   (map (lambda (usr)
         (define res (stock->string (user-res usr)))
-        (send-message usr `(update all ,brd ,sstr ,res ,veeps)))
+        (send-message usr `(update all ,brd ,sstr (,res ,veeps))))
        usrs)
   (void))
 

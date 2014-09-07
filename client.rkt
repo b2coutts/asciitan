@@ -7,6 +7,12 @@
   "basic.rkt" "adv.rkt" "data.rkt" "constants.rkt" "help.rkt"
 )
 
+;; list containing the labels for each of the board lines
+(define bline-headers '(
+  "Resources: "
+  "VPs: "
+))
+
 (define (interp x) (with-input-from-string x (thunk (read))))
 
 ;; ---------------------------- INITIAL SETUP CODE ----------------------------
@@ -32,7 +38,7 @@
 (file-stream-buffer-mode game-out 'line)
 (printf "Connection established; waiting for other users to connect.\n")
 
-(match-define `(update all ,brd ,sstr ,res ,veeps)
+(match-define `(update all ,brd ,sstr ,init-blines)
   (interp (sync (read-line-evt game-in 'any))))
 
 ;; Setup UI
@@ -42,16 +48,19 @@
 (when (or (not width) (< width 80)) (set! width 80))
 
 ;; ---------------------- UI MANIPULATION CODE ----------------------
-;; sets the current charterm style
-(define/contract (charterm-style sty)
-  (-> style? void?)
-  (charterm-display (style->string sty)))
-
 ;; (reversed) bottom line of user's text input
 (define input '())
 
 ;; lines of console text
 (define clines '())
+
+;; lines of info below the board
+(define blines (map cons bline-headers init-blines))
+
+;; sets the current charterm style
+(define/contract (charterm-style sty)
+  (-> style? void?)
+  (charterm-display (style->string sty)))
 
 ;; get the length of a string, taking formatting escape codes into account
 (define (strlen str)
@@ -127,6 +136,23 @@
   (refresh-console!)
   (cursor-input))
 
+;; print the lines of info below the board, as long as they fit
+(define/contract (print-blines [ind 0] [line 24])
+  (-> void?)
+  (cond
+    [(and (< line height) (< ind (length blines)))
+      (define strs (wrap-msg (car (list-ref blines ind))
+                             (cdr (list-ref blines ind))))
+      (map (lambda (i)
+            (charterm-cursor 41 (+ line i))
+            (charterm-style '(37 40 #f #f))
+            (charterm-clear-line-left)
+            (charterm-cursor 1 (+ line i))
+            (safe-display 41 (list-ref strs i)))
+           (range 0 (min (length strs) (- height line))))
+      (print-blines (add1 ind) (- line (length strs)))]
+    [else (cursor-input)]))
+
 ;; update the board state with a new board from the server
 ;; TODO: handle other state updates from server
 (define/contract (update-board! lines)
@@ -143,6 +169,7 @@
   (-> string? void?)
   (charterm-cursor 1 1)
   (charterm-style '(37 40 #f #f))
+  (charterm-clear-line)
   (safe-display width str)
   (cursor-input))
 
@@ -310,13 +337,14 @@
 (draw-separator)
 (update-board! (string-split brd "\n"))
 (set-status sstr)
-(board-line 1 (if (string=? (substring res 0 7) "nothing") "No resources." res))
-(board-line 2 (format "VPs: ~a" veeps))
+(print-blines)
 (clear-prompt)
 
 (define (loop)
   (define evt (sync/timeout 0.5 (wrap-evt (current-charterm) (curry cons 'user))
                   (wrap-evt (read-line-evt game-in 'any) (curry cons 'server))))
+  ;; TODO: remove this
+  (set-status (format "evt is ~a" evt))
   (handle-resize!)
   (match evt
     [(cons 'user _) (match (charterm-read-key)
@@ -343,13 +371,11 @@
       [`(message ,msg) (console! "? " msg)]
       [`(prompt ,_ ,msg) (console! "> " msg)]
       [`(say ,name ,msg) (console! (format "~a: " name) msg)]
-      [`(update all ,brd ,sstr ,res ,veeps)
+      [`(update all ,brd ,sstr ,new-blines)
         (update-board! (string-split brd "\n"))
         (set-status sstr)
-        (board-line 1 (if (string=? (substring res 0 7) "nothing")
-                          "No resources."
-                          res))
-        (board-line 2 (format "VPs: ~a" veeps))]
+        (set! blines (map cons bline-headers new-blines))
+        (print-blines)]
       [`(update board ,brd) (update-board! (string-split brd "\n"))]
       [`(update status ,sstr) (set-status sstr)]
       [`(raw ,_) (error "client received raw")]
