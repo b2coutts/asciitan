@@ -341,13 +341,13 @@
 (clear-prompt)
 
 (define (loop)
-  (define evt (sync/timeout 0.5 (wrap-evt (current-charterm) (curry cons 'user))
-                  (wrap-evt (read-line-evt game-in 'any) (curry cons 'server))))
+  (define evt (sync/timeout 0.5 (current-charterm) (read-line-evt game-in 'any)))
   ;; TODO: remove this
   (set-status (format "evt is ~a" evt))
   (handle-resize!)
-  (match evt
-    [(cons 'user _) (match (charterm-read-key)
+  (cond
+    [(or (charterm? evt) (and (not evt) (charterm-byte-ready?)))
+     (match (charterm-read-key)
       ['return
         (unless (empty? input)
           (user-cmd (list->string (reverse input)))
@@ -366,7 +366,7 @@
       [(? char? ch) (charterm-display (~a ch))
                     (set! input (cons ch input))]
       [_ (void)])]
-    [(cons 'server msg) (match (interp msg)
+    [evt (match (interp evt)
       [`(broadcast ,msg) (console! "* " msg)]
       [`(message ,msg) (console! "? " msg)]
       [`(prompt ,_ ,msg) (console! "> " msg)]
@@ -381,6 +381,6 @@
       [`(raw ,_) (error "client received raw")]
       ;; TODO: return terminal to normal?
       [`(game-over) (exit)])]
-    [#f (void)])
+    [else (void)])
   (loop))
 (loop)
