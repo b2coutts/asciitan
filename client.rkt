@@ -1,4 +1,3 @@
-;; TODO deal with *really* long commands (for some reason)
 #lang racket
 
 (require
@@ -128,7 +127,6 @@
       (refresh-console! (add1 ind) (- line (length strs))))))
 
 ;; add a new line to the console, and refresh it; str is a format string
-;; TODO: deal with wrapping properly
 (define/contract (console! pad str . args)
   (->* (string? string?) #:rest (listof any/c) void?)
   (charterm-style '(37 40 #f #f))
@@ -154,7 +152,6 @@
     [else (cursor-input)]))
 
 ;; update the board state with a new board from the server
-;; TODO: handle other state updates from server
 (define/contract (update-board! lines)
   (-> (listof string?) void?)
   (charterm-style '(37 40 #f #f))
@@ -342,8 +339,6 @@
 
 (define (loop)
   (define evt (sync/timeout 0.5 (current-charterm) (read-line-evt game-in 'any)))
-  ;; TODO: remove this
-  (set-status (format "evt is ~a" evt))
   (handle-resize!)
   (cond
     [(or (charterm? evt) (and (not evt) (charterm-byte-ready?)))
@@ -379,8 +374,7 @@
       [`(update board ,brd) (update-board! (string-split brd "\n"))]
       [`(update status ,sstr) (set-status sstr)]
       [`(raw ,_) (error "client received raw")]
-      ;; TODO: return terminal to normal?
-      [`(game-over) (exit)])]
+      [`(game-over) (close-charterm) (exit)])]
     [else (void)])
   (loop))
 (loop)
