@@ -150,7 +150,7 @@
             (charterm-cursor 1 (+ line i))
             (safe-display 41 (list-ref strs i)))
            (range 0 (min (length strs) (- height line))))
-      (print-blines (add1 ind) (- line (length strs)))]
+      (print-blines (add1 ind) (+ line (length strs)))]
     [else (cursor-input)]))
 
 ;; update the board state with a new board from the server
