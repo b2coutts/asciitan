@@ -100,15 +100,15 @@
   (cond
     [(<= slen len)
       (list (string-append str (make-string (- len slen) #\space)))]
-    [else (match (last-space (substr str 0 len))
+    [else (match (last-space (substr str 0 (add1 len)))
       [#f (cons (substr str 0 len) (wrap-str (substr str len slen) len))]
       [idx (cons (substr str 0 idx)
-                 (wrap-str (substr str (add1 idx) slen) len))])]))
+                 (wrap-str (substr str idx slen) len))])]))
 
-;; wraps a console message to fit in the console
-(define (wrap-msg pad str)
+;; wraps a message to fit in the provided number of columns
+(define (wrap-msg pad str cols)
   (define len (strlen pad))
-  (match-define (cons x xs) (wrap-str str (- width len 43)))
+  (match-define (cons x xs) (wrap-str str (- cols len)))
   (cons (string-append pad x)
         (map (curry string-append (list->string (make-list len #\space))) xs)))
 
@@ -116,7 +116,8 @@
 (define (refresh-console! [ind 0] [line (- height 1)])
   (when (< ind (length clines))
     (define strs (wrap-msg (car (list-ref clines ind))
-                           (cdr (list-ref clines ind))))
+                           (cdr (list-ref clines ind))
+                           (- width 43)))
     (when (>= (- line 1) (length strs))
       (map (lambda (i)
             (charterm-cursor 44 (- line (length strs) (- i) -1))
@@ -140,7 +141,8 @@
   (cond
     [(and (< line height) (< ind (length blines)))
       (define strs (wrap-msg (car (list-ref blines ind))
-                             (cdr (list-ref blines ind))))
+                             (cdr (list-ref blines ind))
+                             41))
       (map (lambda (i)
             (charterm-cursor 41 (+ line i))
             (charterm-style '(37 40 #f #f))
