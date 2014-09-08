@@ -121,7 +121,8 @@
       (setl (fourth usrs) "O.2")
       (road (fourth usrs) "O-2"))
     (semaphore-post mutex)
-    (set-state-lock! st #f)]
+    (set-state-lock! st #f)
+    (send-updates st)]
   [else
     (send-updates st)
     (void (map (lambda (usr)
