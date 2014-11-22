@@ -360,8 +360,10 @@
         (set! input (mydropf (mydropf input (or/c #\space)) (not/c #\space)))
         (cursor-input)
         (charterm-clear-line-right)]
-      [(? char? ch) (charterm-display (~a ch))
-                    (set! input (cons ch input))]
+      [(? char? ch)
+        (when (< (length input) (- width 3))
+          (charterm-display (~a ch))
+          (set! input (cons ch input)))]
       [_ (void)])]
     [evt (match (interp evt)
       [`(broadcast ,msg) (console! "* " msg)]
