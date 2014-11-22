@@ -5,6 +5,13 @@
 (define MAX-USERS 4)
 (define TESTING #t) ;; flag used to get into a game more quickly
 
+(define PORT (make-parameter 0
+  (lambda (p) (let ((num (string->number p)))
+    (and num ((integer-in 0 65535) num) num)))))
+(command-line
+  #:once-each
+    [("-p" "--port") pn "Specify a port to listen on" (PORT pn)])
+
 (define st #f) ;; global state variable (initial value is a place holder)
 (define mutex (make-semaphore 0)) ;; mutex for st
 (define main-thread (current-thread))
@@ -85,7 +92,7 @@
 
 ;; ----------------------------- MAIN RUNNING CODE -----------------------------
 ;; initialize connections to the clients, and the game state
-(set! st (init-server))
+(set! st (init-server (PORT)))
 
 ;; tell all users that initial settlement/road placement is starting
 (logf 'info "beginning initial settlement/road placement\n")
