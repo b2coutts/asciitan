@@ -213,13 +213,20 @@
     (safe-display 41 str)
     (cursor-input)))
 
+;; redraw the user's input
+(define/contract (redraw-user-input)
+  (-> void?)
+  (clear-prompt)
+  (void (map (lambda (ch) (charterm-display (~a ch))) (reverse input))))
+
+
 ;; reprint the entire screen
 (define/contract (reprint-screen)
   (-> void?)
   (charterm-clear-screen)
   (fprintf game-out "~s\n" '(request-update))
   (draw-separator)
-  (clear-prompt)
+  (redraw-user-input)
   (refresh-console!)
   (cursor-input))
 
