@@ -3,7 +3,7 @@
 (require "board.rkt" "data.rkt" "engine.rkt" "basic.rkt" "adv.rkt")
 
 (define MAX-USERS 4)
-(define TESTING #t) ;; flag used to get into a game more quickly
+(define TESTING #f) ;; flag used to get into a game more quickly
 
 (define PORT (make-parameter 0
   (lambda (p) (let ((num (string->number p)))
