@@ -318,13 +318,17 @@
     [`("use" ,card) (match (ss card)
       [(? dev-card? dc) `(use ,dc)]
       [_ (console! "! " "not a dev card: ~a" card)])]
-    [(cons "bank" (cons target lst))
-      (define err (ormap (lambda (res) (cond
-                          [(resource? (ss res)) #f]
-                          [else (console! "! " "invalid resource: ~a" res)]))
-                         (cons target lst)))
-      (if err (void)
-        `(bank ,(map ss lst) ,(ss target)))]
+    [(cons "bank" ress) (cond
+      [(not (member? "for" ress))
+        (console! "! " "Usage: ~a" (car (help-cmd '(bank))))]
+      [else
+        (match-define-values (give (cons "for" get))
+                             (mysplitf-at ress (not/c "for")))
+        (match (filter (not/c (compose resource? ss)) (append give get))
+          [(cons str _) (console! "! " "invalid resource: ~a" str)]
+          ['() (match get
+                [`(,res) `(bank ,(map ss give) ,(ss res))]
+                [_ (console! "! " "Usage: ~a" (car (help-cmd '(bank))))])])])]
     [`("end") '(end)]
     [`("show" ,thing) (cond
       [(showable? (ss thing)) `(show ,(ss thing))]

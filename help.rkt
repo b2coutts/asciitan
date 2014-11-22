@@ -50,8 +50,8 @@
       "Use a development card. dev-card is the name of one of your development "
       "cards")]
     ;; TODO: update this when trading posts finally work
-    [(cons 'bank _) (mkinfo "bank take give1 give2 give3 give4"
-      "Trade 4 resources (give[1-4]) for one resource (take).")]
+    [(cons 'bank _) (mkinfo "bank give1 give2 ... for take"
+      "Trade up to 4 resources (give[1-4]) for one resource (take).")]
     [(cons 'end _) (mkinfo "end"
       "End your turn.")]
     [(cons 'offer _) (mkinfo "offer user give1 give2 ... for take1 take2 ..."

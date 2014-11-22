@@ -3,7 +3,7 @@
 (require "board.rkt" "data.rkt" "engine.rkt" "basic.rkt" "adv.rkt")
 
 (define MAX-USERS 4)
-(define TESTING #f) ;; flag used to get into a game more quickly
+(define TESTING #t) ;; flag used to get into a game more quickly
 
 (define st #f) ;; global state variable (initial value is a place holder)
 (define mutex (make-semaphore 0)) ;; mutex for st
