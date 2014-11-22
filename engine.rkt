@@ -354,6 +354,11 @@
         (broadcast st "~a accepted ~a's offer." (uname target) (uname usr))]
       [else (list 'message "You can't afford to accept!\n")])]))
 
+;; takes a user usr, produces a function which is #t iff its argument is usr 
+(define/contract (user-pred usr)
+  (-> user? (-> any/c boolean?))
+  (lambda (u) (if (and (user? u) (user=? usr u)) #t #f)))
+
 ;; -------------------------- MAJOR HELPER FUNCTIONS ---------------------------
 (define/contract (buy-item! st usr item args)
   (-> state? user? item? (or/c vertex? edge? void?) (or/c response? void?))
@@ -361,6 +366,15 @@
   (cond
     [(not (can-afford? usr (hash-ref item-prices item)))
       (list 'message (format "You can't afford ~a!" item))]
+    ;; checks if the user is out of roads/settlements/cities
+    [(match item
+      ['road (<= 15 (length (filter (user-pred usr)
+                                    (hash-values (board-edges b)))))]
+      ['settlement (<= 5 (length (filter (cons/c (user-pred usr) 'settlement)
+                                         (hash-values (board-verts b)))))]
+      ['city (<= 4 (length (filter (cons/c (user-pred usr) 'city)
+                                   (hash-values (board-verts b)))))])
+        (list 'message (format "You have no more ~as left!" item))]
     [(and (equal? item 'settlement) (not (can-settle? b usr args)))
       (list 'message (format "You can't build a settlement at ~a!"
                              (vertex->string args)))]
