@@ -278,14 +278,15 @@
   (-> state? string? (or/c void? response?))
   (match (filter (lambda (usr) (equal? (user-name usr) usrname))
                  (state-users st))
-    ['() (list 'message "~a is not a player in this game!")]
+    ['() (list 'message (format "~a is not a player in this game!" usrname))]
     [(list usr)
       (define holdr (rlock-holder (state-lock st)))
       (define usrs (rlock-var (state-lock st)))
       (cond
         [(not (member? usr usrs))
-          (list 'message "You must steal from ~a!"
-            (add-between (map uname usrs) ", " #:before-last ", or "))]
+          (list 'message (format "You must steal from ~a!"
+            (apply string-append
+              (add-between (map uname usrs) ", " #:before-last ", or "))))]
         [else (set-state-lock! st #f) (steal-resource! st holdr usr)])]))
 
 ;; prompt a target for a resource to take from everyone, for monopoly
